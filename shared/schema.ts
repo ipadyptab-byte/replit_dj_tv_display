@@ -35,7 +35,6 @@ export const mediaItems = pgTable("media_items", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   file_url: text("file_url"), // Keep for backward compatibility
-  file_data: text("file_data"), // Store base64 encoded data
   media_type: text("media_type").notNull(), // 'image' or 'video'
   duration_seconds: integer("duration_seconds").default(30),
   order_index: integer("order_index").default(0),
