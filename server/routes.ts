@@ -80,8 +80,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.send(buffer);
       }
 
-      // Guard against self-redirect loops if legacy URL points back to API
-      if (item.file_url && item.file_url.startsWith("/api/media/")) {
+      // Guard against self-redirect loops if legacy URL points back to API (relative or absolute)
+      if (
+        item.file_url &&
+        (item.file_url.includes(`/api/media/${item.id}/file`) || item.file_url.startsWith("/api/media/"))
+      ) {
         return res.status(404).json({ message: "File data not available" });
       }
 
@@ -110,7 +113,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.send(buffer);
       }
 
-      if (item.image_url && item.image_url.startsWith("/api/promo/")) {
+      if (
+        item.image_url &&
+        (item.image_url.includes(`/api/promo/${item.id}/file`) || item.image_url.startsWith("/api/promo/"))
+      ) {
         return res.status(404).json({ message: "Image data not available" });
       }
 
@@ -137,7 +143,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.send(buffer);
       }
 
-      if (banner.banner_image_url && banner.banner_image_url.startsWith("/api/banner/")) {
+      if (
+        banner.banner_image_url &&
+        (banner.banner_image_url.includes(`/api/banner/${banner.id}/file`) || banner.banner_image_url.startsWith("/api/banner/"))
+      ) {
         return res.status(404).json({ message: "Banner image data not available" });
       }
 
@@ -248,8 +257,8 @@ app.put("/api/settings/display/:id?", async (req, res) => {
 
         if (item.file_data) {
           url = expected;
-        } else if (url && url.startsWith("/api/media/") && url !== expected) {
-          // Fix legacy placeholder URLs to point to the correct id path
+        } else if (url && (url.includes(`/api/media/${item.id}/file`) || url.startsWith("/api/media/")) && url !== expected) {
+          // Fix legacy placeholder URLs (relative or absolute) to point to the correct id path
           url = expected;
         }
 
