@@ -64,10 +64,7 @@ export interface IStorage {
   createBannerSettings(banner: InsertBannerSettings): Promise<BannerSettings>;
   updateBannerSettings(id: number, banner: Partial<InsertBannerSettings>): Promise<BannerSettings | undefined>;
 
-  // Display Settings
-  createDisplaySettings(settings: InsertDisplaySettings): Promise<DisplaySettings>;
-  updateDisplaySettings(id: number, settings: Partial<InsertDisplaySettings>): Promise<DisplaySettings | undefined>;
-}
+  }
 
 export class PostgresStorage implements IStorage {
   // Gold Rates
