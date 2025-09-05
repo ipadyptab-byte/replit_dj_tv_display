@@ -240,7 +240,23 @@ app.put("/api/settings/display/:id?", async (req, res) => {
     try {
       const activeOnly = req.query.active === "true";
       const media = await storage.getMediaItems(activeOnly);
-      res.json(media);
+
+      // Normalize file_url for client rendering
+      const normalized = media.map((item) => {
+        const expected = `/api/media/${item.id}/file`;
+        let url = item.file_url || undefined;
+
+        if (item.file_data) {
+          url = expected;
+        } else if (url && url.startsWith("/api/media/") && url !== expected) {
+          // Fix legacy placeholder URLs to point to the correct id path
+          url = expected;
+        }
+
+        return { ...item, file_url: url };
+      });
+
+      res.json(normalized);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch media items" });
     }

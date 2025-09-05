@@ -230,19 +230,32 @@ export default function MediaManager() {
                     <div className="relative">
                       {item.media_type === 'image' ? (
                         <img 
-                          src={item.file_url || ""} 
+                          src={
+                            item.file_url && item.file_url.includes(`/api/media/${item.id}/file`)
+                              ? item.file_url
+                              : `/api/media/${item.id}/file`
+                          } 
                           alt={item.name}
                           className="w-full h-48 object-cover"
                           onError={(e) => {
-                            e.currentTarget.src = '/placeholder-image.jpg';
+                            // Fallback to a known asset if serving fails
+                            e.currentTarget.src = '/logo.png';
                           }}
                         />
                       ) : (
                         <video 
-                          src={item.file_url || ""}
+                          src={
+                            item.file_url && item.file_url.includes(`/api/media/${item.id}/file`)
+                              ? item.file_url
+                              : `/api/media/${item.id}/file`
+                          }
                           className="w-full h-48 object-cover"
                           controls
                           preload="metadata"
+                          onError={(e) => {
+                            // No hard fallback for video; keep controls visible
+                            // Optionally could set a poster image here
+                          }}
                         />
                       )}
                       <div className="absolute top-2 right-2">
