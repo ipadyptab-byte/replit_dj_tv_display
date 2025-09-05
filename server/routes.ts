@@ -80,19 +80,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.send(buffer);
       }
 
-      // Guard against self-redirect loops if legacy URL points back to API (relative or absolute)
-      if (
-        item.file_url &&
-        (item.file_url.includes(`/api/media/${item.id}/file`) || item.file_url.startsWith("/api/media/"))
-      ) {
-        return res.status(404).json({ message: "File data not available" });
-      }
-
+      // Only redirect to external http(s) URLs that are NOT pointing back to our API
       if (item.file_url) {
-        // Fallback to old file system or external URL
-        return res.redirect(item.file_url);
+        const url = item.file_url;
+        const isHttp = /^https?:\/\//i.test(url);
+        const pointsToApi = url.includes('/api/media/');
+        if (isHttp && !pointsToApi) {
+          return res.redirect(url);
+        }
       }
 
+      // If we reach here, we don't have bytes in DB and we won't redirect to our own API (to avoid loops)
       return res.status(404).json({ message: "File data not available" });
     } catch (error) {
       res.status(500).json({ message: "Failed to serve file" });
@@ -113,17 +111,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.send(buffer);
       }
 
-      if (
-        item.image_url &&
-        (item.image_url.includes(`/api/promo/${item.id}/file`) || item.image_url.startsWith("/api/promo/"))
-      ) {
-        return res.status(404).json({ message: "Image data not available" });
-      }
-
+      // Only redirect to external http(s) URLs that are NOT pointing back to our API
       if (item.image_url) {
-        return res.redirect(item.image_url);
+        const url = item.image_url;
+        const isHttp = /^https?:\/\//i.test(url);
+        const pointsToApi = url.includes('/api/promo/');
+        if (isHttp && !pointsToApi) {
+          return res.redirect(url);
+        }
       }
 
+      // If we reach here, we don't have bytes in DB and we won't redirect to our own API (to avoid loops)
       return res.status(404).json({ message: "Image data not available" });
     } catch (error) {
       res.status(500).json({ message: "Failed to serve image" });
@@ -143,17 +141,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.send(buffer);
       }
 
-      if (
-        banner.banner_image_url &&
-        (banner.banner_image_url.includes(`/api/banner/${banner.id}/file`) || banner.banner_image_url.startsWith("/api/banner/"))
-      ) {
-        return res.status(404).json({ message: "Banner image data not available" });
-      }
-
+      // Only redirect to external http(s) URLs that are NOT pointing back to our API
       if (banner.banner_image_url) {
-        return res.redirect(banner.banner_image_url);
+        const url = banner.banner_image_url;
+        const isHttp = /^https?:\/\//i.test(url);
+        const pointsToApi = url.includes('/api/banner/');
+        if (isHttp && !pointsToApi) {
+          return res.redirect(url);
+        }
       }
 
+      // If we reach here, we don't have bytes in DB and we won't redirect to our own API (to avoid loops)
       return res.status(404).json({ message: "Banner image data not available" });
     } catch (error) {
       res.status(500).json({ message: "Failed to serve banner image" });
