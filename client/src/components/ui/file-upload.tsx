@@ -11,6 +11,26 @@ interface FileUploadProps {
   children?: React.ReactNode;
 }
 
+/**
+ * Convert a comma-separated accept string (e.g. "image/*,video/*,.pdf")
+ * into the object shape required by react-dropzone v14:
+ * { "image/*": [], "video/*": [], ".pdf": [] }
+ */
+function toDropzoneAccept(accept?: string) {
+  if (!accept) return undefined;
+  const entries = accept
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  if (!entries.length) return undefined;
+
+  const acc: Record<string, string[]> = {};
+  for (const key of entries) {
+    acc[key] = [];
+  }
+  return acc;
+}
+
 export function FileUpload({
   onDrop,
   accept,
@@ -25,7 +45,7 @@ export function FileUpload({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: handleDrop,
-    accept: accept ? { [accept]: [] } : undefined,
+    accept: toDropzoneAccept(accept),
     multiple,
     maxSize
   });
