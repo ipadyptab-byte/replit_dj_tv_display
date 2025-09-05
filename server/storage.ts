@@ -114,7 +114,10 @@ async createDisplaySettings(settings: InsertDisplaySettings): Promise<DisplaySet
       .returning();
     return result[0];
   }
-
+  async deleteDisplaySettings(id: number): Promise<boolean> {
+    const result = await db.delete(mediaItems).where(eq(mediaItems.id, id)).returning();
+    return result.length > 0;
+  }
   // Media Items
   async getMediaItems(activeOnly = false): Promise<MediaItem[]> {
     if (activeOnly) {
