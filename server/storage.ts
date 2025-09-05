@@ -52,6 +52,7 @@ export interface IStorage {
   createMediaItem(item: InsertMediaItem): Promise<MediaItem>;
   updateMediaItem(id: number, item: Partial<InsertMediaItem>): Promise<MediaItem | undefined>;
   deleteMediaItem(id: number): Promise<boolean>;
+  getMediaItemById(id: number): Promise<MediaItem | undefined>;
   
   // Promo Images
   getPromoImages(activeOnly?: boolean): Promise<PromoImage[]>;
@@ -124,8 +125,10 @@ export class PostgresStorage implements IStorage {
       .orderBy(asc(mediaItems.order_index));
   }
 
-  async createMediaItem(item: InsertMediaItem): Promise<MediaItem> {
-    const result = await db.insert(mediaItems).values(item).returning();
+  async getMediaItemById(id: number): Promise<MediaItem | undefined> {
+    const result = await db.select().from(mediaItems)
+      .where(eq(mediaItems.id, id))
+      .limit(1);
     return result[0];
   }
 
