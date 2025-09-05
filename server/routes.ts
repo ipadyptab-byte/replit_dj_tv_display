@@ -98,13 +98,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!item || (!item.image_data && !item.image_url)) {
         return res.status(404).json({ message: "Image not found" });
       }
-      
-      res.set({
-        'Content-Type': item.file_size ? 'image/jpeg' : 'application/octet-stream'
-      });
-      
+
+      // Choose appropriate content type based on stored mime or file extension
+      const inferredType =
+        item.name?.toLowerCase().endsWith(".png") ? "image/png" :
+        item.name?.toLowerCase().endsWith(".gif") ? "image/gif" :
+        "image/jpeg";
+
+      // If your storage stores mime type for promo, prefer it. Cast to any to avoid schema constraints.
+      const contentType = (item as any).mime_type || inferredType;
+
+      res.set({ "Content-Type": contentType });
+
       if (item.image_data) {
-        const buffer = Buffer.from(item.image_data, 'base64');
+        const buffer = Buffer.from(item.image_data, "base64");
         res.send(buffer);
       } else if (item.image_url) {
         res.redirect(item.image_url);
