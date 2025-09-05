@@ -228,23 +228,26 @@ export default function MediaManager() {
                 {mediaItems.map((item) => (
                   <div key={item.id} className="border rounded-lg overflow-hidden bg-white shadow-sm">
                     <div className="relative">
-                      {item.media_type === 'image' ? (
-                        <img 
-                          src={item.file_url || ""} 
-                          alt={item.name}
-                          className="w-full h-48 object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = '/placeholder-image.jpg';
-                          }}
-                        />
-                      ) : (
-                        <video 
-                          src={item.file_url || ""}
-                          className="w-full h-48 object-cover"
-                          controls
-                          preload="metadata"
-                        />
-                      )}
+                      {(() => {
+                        const mediaSrc = item.file_url || `/api/media/${item.id}/file`;
+                        return item.media_type === 'image' ? (
+                          <img 
+                            src={mediaSrc}
+                            alt={item.name}
+                            className="w-full h-48 object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = '/placeholder-image.jpg';
+                            }}
+                          />
+                        ) : (
+                          <video 
+                            src={mediaSrc}
+                            className="w-full h-48 object-cover"
+                            controls
+                            preload="metadata"
+                          />
+                        );
+                      })()}
                       <div className="absolute top-2 right-2">
                         <Button
                           size="sm"
