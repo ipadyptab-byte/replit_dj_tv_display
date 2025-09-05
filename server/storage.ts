@@ -45,7 +45,8 @@ export interface IStorage {
   getDisplaySettings(): Promise<DisplaySettings | undefined>;
   createDisplaySettings(settings: InsertDisplaySettings): Promise<DisplaySettings>;
   updateDisplaySettings(id: number, settings: Partial<InsertDisplaySettings>): Promise<DisplaySettings | undefined>;
-  
+  deleteMediaItem(id: number): Promise<boolean>;
+
   // Media Items
   getMediaItems(activeOnly?: boolean): Promise<MediaItem[]>;
   createMediaItem(item: InsertMediaItem): Promise<MediaItem>;
