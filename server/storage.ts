@@ -40,33 +40,28 @@ export interface IStorage {
   getCurrentRates(): Promise<GoldRate | undefined>;
   createGoldRate(rate: InsertGoldRate): Promise<GoldRate>;
   updateGoldRate(id: number, rate: Partial<InsertGoldRate>): Promise<GoldRate | undefined>;
-  
+
   // Display Settings
   getDisplaySettings(): Promise<DisplaySettings | undefined>;
   createDisplaySettings(settings: InsertDisplaySettings): Promise<DisplaySettings>;
   updateDisplaySettings(id: number, settings: Partial<InsertDisplaySettings>): Promise<DisplaySettings | undefined>;
-  deleteMediaItem(id: number): Promise<boolean>;
 
   // Media Items
   getMediaItems(activeOnly?: boolean): Promise<MediaItem[]>;
   createMediaItem(item: InsertMediaItem): Promise<MediaItem>;
   updateMediaItem(id: number, item: Partial<InsertMediaItem>): Promise<MediaItem | undefined>;
   deleteMediaItem(id: number): Promise<boolean>;
-  
+
   // Promo Images
   getPromoImages(activeOnly?: boolean): Promise<PromoImage[]>;
   createPromoImage(image: InsertPromoImage): Promise<PromoImage>;
   updatePromoImage(id: number, image: Partial<InsertPromoImage>): Promise<PromoImage | undefined>;
   deletePromoImage(id: number): Promise<boolean>;
-  
+
   // Banner Settings
   getBannerSettings(): Promise<BannerSettings | undefined>;
   createBannerSettings(banner: InsertBannerSettings): Promise<BannerSettings>;
   updateBannerSettings(id: number, banner: Partial<InsertBannerSettings>): Promise<BannerSettings | undefined>;
-
-  // Display Settings
-  createDisplaySettings(settings: InsertDisplaySettings): Promise<DisplaySettings>;
-  updateDisplaySettings(id: number, settings: Partial<InsertDisplaySettings>): Promise<DisplaySettings | undefined>;
 }
 
 export class PostgresStorage implements IStorage {
