@@ -91,30 +91,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/promo/:id/file", async (req, res) => {
-    try {
-      const promos = await storage.getPromoImages(false);
-      const item = promos.find(p => p.id === parseInt(req.params.id));
-      if (!item || (!item.image_data && !item.image_url)) {
-        return res.status(404).json({ message: "Image not found" });
-      }
-      
-      res.set({
-        'Content-Type': item.file_size ? 'image/jpeg' : 'application/octet-stream'
-      });
-      
-      if (item.image_data) {
-        const buffer = Buffer.from(item.image_data, 'base64');
-        res.send(buffer);
-      } else if (item.image_url) {
-        res.redirect(item.image_url);
-      } else {
-        res.status(404).json({ message: "Image data not available" });
-      }
-    } catch (error) {
-      res.status(500).json({ message: "Failed to serve image" });
+  app.get("/api/media/:id/file", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const item = await storage.getMediaItemById(id); // Add this method to storage
+    if (!item || (!item.file_data && !item.file_url)) {
+      return res.status(404).json({ message: "File not found" });
     }
-  });
+    
+    if (item.file_data) {
+      // Serve base64 data directly
+      const buffer = Buffer.from(item.file_data, 'base64');
+      res.set({
+        'Content-Type': item.mime_type || 'application/octet-stream',
+        'Content-Length': buffer.length.toString()
+      });
+      res.send(buffer);
+    } else if (item.file_url) {
+      // Handle external URLs
+      res.redirect(item.file_url);
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Failed to serve file" });
+  }
+});
   
   app.get("/api/banner/:id/file", async (req, res) => {
     try {
