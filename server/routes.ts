@@ -62,35 +62,7 @@ const uploadBanner = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve binary data from database
-  app.get("/api/media/:id/file", async (req, res) => {
-    try {
-      const media = await storage.getMediaItems(false);
-      const item = media.find(m => m.id === parseInt(req.params.id));
-      if (!item || (!item.file_data && !item.file_url)) {
-        return res.status(404).json({ message: "File not found" });
-      }
-      
-      // Set appropriate headers
-      res.set({
-        'Content-Type': item.mime_type || 'application/octet-stream',
-        'Content-Length': item.file_size?.toString() || '0'
-      });
-      
-      if (item.file_data) {
-        // Serve from database (base64 decode)
-        const buffer = Buffer.from(item.file_data, 'base64');
-        res.send(buffer);
-      } else if (item.file_url) {
-        // Fallback to old file system approach for existing data
-        res.redirect(item.file_url);
-      } else {
-        res.status(404).json({ message: "File data not available" });
-      }
-    } catch (error) {
-      res.status(500).json({ message: "Failed to serve file" });
-    }
-  });
-  
+    
   app.get("/api/media/:id/file", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
