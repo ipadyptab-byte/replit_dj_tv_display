@@ -64,6 +64,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve binary data from database
   app.get("/api/media/:id/file", async (req, res) => {
     try {
+      // Prevent caches from persisting potential redirects
+      res.set('Cache-Control', 'no-store');
+
       const media = await storage.getMediaItems(false);
       const item = media.find(m => m.id === parseInt(req.params.id));
       if (!item || (!item.file_data && !item.file_url)) {
@@ -99,6 +102,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/promo/:id/file", async (req, res) => {
     try {
+      // Prevent caches from persisting potential redirects
+      res.set('Cache-Control', 'no-store');
+
       const promos = await storage.getPromoImages(false);
       const item = promos.find(p => p.id === parseInt(req.params.id));
       if (!item || (!item.image_data && !item.image_url)) {
@@ -130,6 +136,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/banner/:id/file", async (req, res) => {
     try {
+      // Prevent caches from persisting potential redirects
+      res.set('Cache-Control', 'no-store');
+
       const banner = await storage.getBannerSettings();
       if (!banner || (!banner.banner_image_data && !banner.banner_image_url)) {
         return res.status(404).json({ message: "Banner image not found" });
