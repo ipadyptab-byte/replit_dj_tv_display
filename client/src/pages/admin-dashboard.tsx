@@ -6,6 +6,7 @@ import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -23,21 +24,113 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { settingsApi, systemApi } from "@/lib/api";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 import { insertDisplaySettingsSchema } from "@shared/schema";
+import type { DisplaySettings, InsertDisplaySettings } from "@shared/schema";
+
+// Direct API call functions that work with your queryClient setup
+const displaySettingsApi = {
+  getDisplay: async (): Promise<DisplaySettings | null> => {
+    try {
+      const response = await apiRequest("GET", "/api/settings/display");
+      const data = await response.json();
+      return data as DisplaySettings;
+    } catch (error) {
+      console.error("Failed to fetch display settings:", error);
+      return null;
+    }
+  },
+
+  createDisplay: async (settings: InsertDisplaySettings): Promise<DisplaySettings> => {
+    const response = await apiRequest("POST", "/api/settings/display", settings);
+    return response.json();
+  },
+
+  updateDisplay: async (id: number, settings: Partial<InsertDisplaySettings>): Promise<DisplaySettings> => {
+    const response = await apiRequest("PUT", `/api/settings/display/${id}`, settings);
+    return response.json();
+  }
+};
+
+// System API using your apiRequest function
+const systemApi = {
+  getInfo: async () => {
+    const response = await apiRequest("GET", "/api/system/info");
+    return response.json();
+  }
+};
+
+// Mutation function using your existing queryClient infrastructure
+const useDisplaySettingsMutation = () => {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: InsertDisplaySettings) => {
+      try {
+        // Get current settings first
+        const currentSettings = await displaySettingsApi.getDisplay();
+        
+        if (currentSettings?.id) {
+          // Update existing settings
+          return await displaySettingsApi.updateDisplay(currentSettings.id, data);
+        } else {
+          // Create new settings
+          return await displaySettingsApi.createDisplay(data);
+        }
+      } catch (error) {
+        console.error("Settings mutation error:", error);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      // Update the query cache with the new data
+      queryClient.setQueryData(["/api/settings/display"], data);
+      
+      toast({
+        title: "Success",
+        description: "Display settings saved successfully!",
+        className: cn(
+          "bg-green-50 text-green-900 border-green-200"
+        ),
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Mutation error:", error);
+      
+      let errorMessage = "Failed to save settings. Please try again.";
+      
+      if (error.message.includes("401")) {
+        errorMessage = "Authentication required. Please log in again.";
+      } else if (error.message.includes("NetworkError") || error.message.includes("Failed to fetch")) {
+        errorMessage = "Network connection failed. Please check your internet connection.";
+      } else if (error.message.includes("500")) {
+        errorMessage = "Server error. Please try again later.";
+      }
+
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+        className: cn(
+          "bg-red-50 text-red-900 border-red-200"
+        ),
+      });
+    },
+  });
+};
 
 export default function AdminDashboard() {
   const { toast } = useToast();
 
-  // Get current settings
+  // Get current settings using your queryClient
   const {
     data: settings,
     isLoading,
     error,
   } = useQuery({
     queryKey: ["/api/settings/display"],
-    queryFn: settingsApi.getDisplay,
+    queryFn: () => displaySettingsApi.getDisplay(),
     retry: 2,
   });
 
@@ -48,8 +141,11 @@ export default function AdminDashboard() {
     refetchInterval: 30000,
   });
 
+  // Use the mutation
+  const updateSettingsMutation = useDisplaySettingsMutation();
+
   // Form setup
-  const form = useForm<z.infer<typeof insertDisplaySettingsSchema>>({
+  const form = useForm<InsertDisplaySettings>({
     resolver: zodResolver(insertDisplaySettingsSchema),
     defaultValues: {
       orientation: "horizontal",
@@ -65,7 +161,6 @@ export default function AdminDashboard() {
   // Update form when settings load
   React.useEffect(() => {
     if (settings) {
-      // Clean the settings data to ensure proper types and exclude id/created_date
       const cleanedSettings = {
         orientation: settings.orientation || "horizontal",
         background_color: settings.background_color || "#FFF8E1",
@@ -79,43 +174,7 @@ export default function AdminDashboard() {
     }
   }, [settings, form]);
 
-  // Update settings mutation
-  const updateSettingsMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof insertDisplaySettingsSchema>) => {
-      try {
-        // Try to update existing settings
-        if (settings?.id) {
-          return await settingsApi.updateDisplay(settings.id, data);
-        } else {
-          // If no settings exist, create new ones
-          return await settingsApi.createDisplay(data);
-        }
-      } catch (error) {
-        console.error("Settings mutation error:", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/settings/display"] });
-      toast({
-        title: "Success",
-        description: "Settings updated successfully!",
-      });
-    },
-    onError: (error: Error) => {
-      console.error("Mutation error:", error);
-      const errorMessage = error.message.includes("Network Error")
-        ? "Network connection failed. Please check your internet connection."
-        : `Failed to update settings: ${error.message}`;
-
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    },
-  });
-  const onSubmit = (data: z.infer<typeof insertDisplaySettingsSchema>) => {
+  const onSubmit = (data: InsertDisplaySettings) => {
     updateSettingsMutation.mutate(data);
   };
 
@@ -140,9 +199,9 @@ export default function AdminDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className={cn("min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center")}>
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-jewelry-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className={cn("w-8 h-8 border-2 border-jewelry-primary border-t-transparent rounded-full animate-spin mx-auto mb-4")}></div>
           <p>Loading settings...</p>
         </div>
       </div>
@@ -151,9 +210,9 @@ export default function AdminDashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className={cn("min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center")}>
         <div className="text-center">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className={cn("w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4")}>
             <i className="fas fa-exclamation-triangle text-red-600 text-xl"></i>
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -163,11 +222,7 @@ export default function AdminDashboard() {
             Please check your connection and try again.
           </p>
           <Button
-            onClick={() =>
-              queryClient.refetchQueries({
-                queryKey: ["/api/settings/display"],
-              })
-            }
+            onClick={() => queryClient.refetchQueries({ queryKey: ["/api/settings/display"] })}
             className="bg-jewelry-primary text-white"
           >
             <i className="fas fa-refresh mr-2"></i>Retry
@@ -178,7 +233,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
+    <div className={cn("min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-4")}>
       <div className="max-w-6xl mx-auto">
         {/* Dashboard Header */}
         <div className="text-center mb-8">
@@ -186,7 +241,6 @@ export default function AdminDashboard() {
             <div className="w-12 h-12 bg-gradient-to-r from-jewelry-primary to-jewelry-secondary rounded-xl flex items-center justify-center">
               <i className="fas fa-gem text-white text-xl"></i>
             </div>
-            {/* Logo-only branding - Logo embedded in icon */}
           </div>
           <h2 className="text-xl font-semibold text-gray-700">
             Admin Dashboard
@@ -364,10 +418,7 @@ export default function AdminDashboard() {
                           }}
                           title={preset.name}
                           onClick={() => {
-                            form.setValue(
-                              "background_color",
-                              preset.colors.background,
-                            );
+                            form.setValue("background_color", preset.colors.background);
                             form.setValue("text_color", preset.colors.text);
                           }}
                         />
@@ -398,9 +449,7 @@ export default function AdminDashboard() {
                             max="300"
                             {...field}
                             value={field.value ?? 30}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
+                            onChange={(e) => field.onChange(Number(e.target.value))}
                           />
                         </FormControl>
                         <p className="text-xs text-gray-600">
@@ -424,9 +473,7 @@ export default function AdminDashboard() {
                             max="60"
                             {...field}
                             value={field.value ?? 15}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
+                            onChange={(e) => field.onChange(Number(e.target.value))}
                           />
                         </FormControl>
                         <p className="text-xs text-gray-600">
@@ -457,8 +504,7 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
                   <CardTitle className="flex items-center">
-                    <i className="fas fa-info-circle mr-2"></i>System
-                    Information
+                    <i className="fas fa-info-circle mr-2"></i>System Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
@@ -480,9 +526,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="flex justify-between">
-                        <span className="text-gray-600">
-                          Connected Devices:
-                        </span>
+                        <span className="text-gray-600">Connected Devices:</span>
                         <span className="font-semibold">
                           {systemInfo.connected_devices}
                         </span>
@@ -526,12 +570,15 @@ export default function AdminDashboard() {
             <div className="text-center mt-6">
               <Button
                 type="submit"
-                className="bg-gradient-to-r from-jewelry-primary to-jewelry-secondary text-white px-8 py-4 text-lg"
+                className={cn(
+                  "bg-gradient-to-r from-jewelry-primary to-jewelry-secondary",
+                  "text-white px-8 py-4 text-lg hover:opacity-90 transition-opacity"
+                )}
                 disabled={updateSettingsMutation.isPending}
               >
                 {updateSettingsMutation.isPending ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    <div className={cn("w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2")}></div>
                     Saving...
                   </>
                 ) : (
