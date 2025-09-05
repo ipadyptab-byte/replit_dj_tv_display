@@ -28,13 +28,15 @@ export const displaySettings = pgTable("display_settings", {
   show_media: boolean("show_media").default(true),
   rates_display_duration_seconds: integer("rates_display_duration_seconds").default(15),
   refresh_interval: integer("refresh_interval").default(30),
-created_date: timestamp("created_date").defaultNow()});
+  created_date: timestamp("created_date").defaultNow()
+});
 
 // Media Items (for ads between rates)
 export const mediaItems = pgTable("media_items", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   file_url: text("file_url"), // Keep for backward compatibility
+  file_data: text("file_data"), // Store base64 encoded data
   media_type: text("media_type").notNull(), // 'image' or 'video'
   duration_seconds: integer("duration_seconds").default(30),
   order_index: integer("order_index").default(0),
