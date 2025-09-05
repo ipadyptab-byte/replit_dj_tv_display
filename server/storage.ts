@@ -37,32 +37,34 @@ const db = drizzle(client);
 
 export interface IStorage {
   // Gold Rates
-  getCurrentRates(): Promise<GoldRate | undefined>;
-  createGoldRate(rate: InsertGoldRate): Promise<GoldRate>;
-  updateGoldRate(id: number, rate: Partial<InsertGoldRate>): Promise<GoldRate | undefined>;
+  getCurrentRates(): Promise&lt;GoldRate | undefined&gt;;
+  createGoldRate(rate: InsertGoldRate): Promise&lt;GoldRate&gt;;
+  updateGoldRate(id: number, rate: Partial&lt;InsertGoldRate&gt;): Promise&lt;GoldRate | undefined&gt;;
   
   // Display Settings
-  getDisplaySettings(): Promise<DisplaySettings | undefined>;
-  createDisplaySettings(settings: InsertDisplaySettings): Promise<DisplaySettings>;
-  updateDisplaySettings(id: number, settings: Partial<InsertDisplaySettings>): Promise<DisplaySettings | undefined>;
-  deleteMediaItem(id: number): Promise<boolean>;
+  getDisplaySettings(): Promise&lt;DisplaySettings | undefined&gt;;
+  createDisplaySettings(settings: InsertDisplaySettings): Promise&lt;DisplaySettings&gt;;
+  updateDisplaySettings(id: number, settings: Partial&lt;InsertDisplaySettings&gt;): Promise&lt;DisplaySettings | undefined&gt;;
+  deleteMediaItem(id: number): Promise&lt;boolean&gt;;
 
   // Media Items
-  getMediaItems(activeOnly?: boolean): Promise<MediaItem[]>;
-  createMediaItem(item: InsertMediaItem): Promise<MediaItem>;
-  updateMediaItem(id: number, item: Partial<InsertMediaItem>): Promise<MediaItem | undefined>;
-  deleteMediaItem(id: number): Promise<boolean>;
+  getMediaItems(activeOnly?: boolean): Promise&lt;MediaItem[]&gt;;
+  getMediaItemById(id: number): Promise&lt;MediaItem | undefined&gt;;
+  createMediaItem(item: InsertMediaItem): Promise&lt;MediaItem&gt;;
+  updateMediaItem(id: number, item: Partial&lt;InsertMediaItem&gt;): Promise&lt;MediaItem | undefined&gt;;
+  deleteMediaItem(id: number): Promise&lt;boolean&gt;;
   
   // Promo Images
-  getPromoImages(activeOnly?: boolean): Promise<PromoImage[]>;
-  createPromoImage(image: InsertPromoImage): Promise<PromoImage>;
-  updatePromoImage(id: number, image: Partial<InsertPromoImage>): Promise<PromoImage | undefined>;
-  deletePromoImage(id: number): Promise<boolean>;
+  getPromoImages(activeOnly?: boolean): Promise&lt;PromoImage[]&gt;;
+  getPromoImageById(id: number): Promise&lt;PromoImage | undefined&gt;;
+  createPromoImage(image: InsertPromoImage): Promise&lt;PromoImage&gt;;
+  updatePromoImage(id: number, image: Partial&lt;InsertPromoImage&gt;): Promise&lt;PromoImage | undefined&gt;;
+  deletePromoImage(id: number): Promise&lt;boolean&gt;;
   
   // Banner Settings
-  getBannerSettings(): Promise<BannerSettings | undefined>;
-  createBannerSettings(banner: InsertBannerSettings): Promise<BannerSettings>;
-  updateBannerSettings(id: number, banner: Partial<InsertBannerSettings>): Promise<BannerSettings | undefined>;
+  getBannerSettings(): Promise&lt;BannerSettings | undefined&gt;;
+  createBannerSettings(banner: InsertBannerSettings): Promise&lt;BannerSettings&gt;;
+  updateBannerSettings(id: number, banner: Partial&lt;InsertBannerSettings&gt;): Promise&lt;BannerSettings | undefined&gt;;
 
   }
 
@@ -124,6 +126,13 @@ export class PostgresStorage implements IStorage {
       .orderBy(asc(mediaItems.order_index));
   }
 
+  async getMediaItemById(id: number): Promise<MediaItem | undefined> {
+    const result = await db.select().from(mediaItems)
+      .where(eq(mediaItems.id, id))
+      .limit(1);
+    return result[0];
+  }
+
   async createMediaItem(item: InsertMediaItem): Promise<MediaItem> {
     const result = await db.insert(mediaItems).values(item).returning();
     return result[0];
@@ -156,6 +165,13 @@ export class PostgresStorage implements IStorage {
 
   async createPromoImage(image: InsertPromoImage): Promise<PromoImage> {
     const result = await db.insert(promoImages).values(image).returning();
+    return result[0];
+  }
+
+  async getPromoImageById(id: number): Promise<PromoImage | undefined> {
+    const result = await db.select().from(promoImages)
+      .where(eq(promoImages.id, id))
+      .limit(1);
     return result[0];
   }
 

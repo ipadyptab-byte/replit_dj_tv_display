@@ -61,60 +61,40 @@ const uploadBanner = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Serve binary data from database
+  // Serve media binary data by ID (avoids redirect loops)
   app.get("/api/media/:id/file", async (req, res) => {
     try {
-      const media = await storage.getMediaItems(false);
-      const item = media.find(m => m.id === parseInt(req.params.id));
+      const id = parseInt(req.params.id);
+      const item = await storage.getMediaItemById(id);
       if (!item || (!item.file_data && !item.file_url)) {
         return res.status(404).json({ message: "File not found" });
       }
-      
-      // Set appropriate headers
-      res.set({
-        'Content-Type': item.mime_type || 'application/octet-stream',
-        'Content-Length': item.file_size?.toString() || '0'
-      });
-      
+
       if (item.file_data) {
-        // Serve from database (base64 decode)
-        const buffer = Buffer.from(item.file_data, 'base64');
-        res.send(buffer);
-      } else if (item.file_url) {
-        // Fallback to old file system approach for existing data
-        res.redirect(item.file_url);
-      } else {
-        res.status(404).json({ message: "File data not available" });
+        const buffer = Buffer.from(item.file_data, "base64");
+        res.set({
+          "Content-Type": item.mime_type || "application/octet-stream",
+          "Content-Length": buffer.length.toString(),
+        });
+        return res.send(buffer);
       }
+
+      // Only redirect for safe, non-recursive targets
+      const url = item.file_url || "";
+      const isExternal = /^https?:\\/\\//i.test(url);
+      const isUploadsPath = url.startsWith("/uploads/");
+      const isSelf = url === req.originalUrl;
+
+      if ((isExternal || isUploadsPath) && !isSelf) {
+        return res.redirect(url);
+      }
+
+      return res.status(404).json({ message: "File data not available" });
     } catch (error) {
       res.status(500).json({ message: "Failed to serve file" });
     }
   });
   
-  app.get("/api/media/:id/file", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const item = await storage.getMediaItemById(id); // Add this method to storage
-    if (!item || (!item.file_data && !item.file_url)) {
-      return res.status(404).json({ message: "File not found" });
-    }
-    
-    if (item.file_data) {
-      // Serve base64 data directly
-      const buffer = Buffer.from(item.file_data, 'base64');
-      res.set({
-        'Content-Type': item.mime_type || 'application/octet-stream',
-        'Content-Length': buffer.length.toString()
-      });
-      res.send(buffer);
-    } else if (item.file_url) {
-      // Handle external URLs
-      res.redirect(item.file_url);
-    }
-  } catch (error) {
-    res.status(500).json({ message: "Failed to serve file" });
-  }
-});
   
   app.get("/api/banner/:id/file", async (req, res) => {
     try {
@@ -311,6 +291,39 @@ app.put("/api/settings/display/:id?", async (req, res) => {
       }
     } catch (error) {
       res.status(500).json({ message: "Failed to delete media item" });
+    }
+  });
+
+  // Serve promo image binary data by ID (avoids redirect loops)
+  app.get("/api/promo/:id/file", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const item = await storage.getPromoImageById(id);
+      if (!item || (!item.image_data && !item.image_url)) {
+        return res.status(404).json({ message: "Promo image not found" });
+      }
+
+      if (item.image_data) {
+        const buffer = Buffer.from(item.image_data, "base64");
+        res.set({
+          "Content-Type": "image/jpeg",
+          "Content-Length": buffer.length.toString(),
+        });
+        return res.send(buffer);
+      }
+
+      const url = item.image_url || "";
+      const isExternal = /^https?:\/\//i.test(url);
+      const isUploadsPath = url.startsWith("/uploads/");
+      const isSelf = url === req.originalUrl;
+
+      if ((isExternal || isUploadsPath) && !isSelf) {
+        return res.redirect(url);
+      }
+
+      return res.status(404).json({ message: "Promo image data not available" });
+    } catch {
+      res.status(500).json({ message: "Failed to serve promo image" });
     }
   });
 
