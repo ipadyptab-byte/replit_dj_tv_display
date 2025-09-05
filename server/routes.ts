@@ -69,28 +69,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!item || (!item.file_data && !item.file_url)) {
         return res.status(404).json({ message: "File not found" });
       }
-      
-      // Set appropriate headers
-      res.set({
-        'Content-Type': item.mime_type || 'application/octet-stream',
-        'Content-Length': item.file_size?.toString() || '0'
-      });
-      
+
+      // Prefer serving from DB if available
       if (item.file_data) {
-        // Serve from database (base64 decode)
         const buffer = Buffer.from(item.file_data, 'base64');
-        res.send(buffer);
-      } else if (item.file_url) {
-        // Fallback to old file system approach for existing data
-        res.redirect(item.file_url);
-      } else {
-        res.status(404).json({ message: "File data not available" });
+        res.set({
+          'Content-Type': item.mime_type || 'application/octet-stream',
+          'Content-Length': item.file_size?.toString() || undefined
+        });
+        return res.send(buffer);
       }
+
+      // Guard against self-redirect loops if legacy URL points back to API
+      if (item.file_url && item.file_url.startsWith("/api/media/")) {
+        return res.status(404).json({ message: "File data not available" });
+      }
+
+      if (item.file_url) {
+        // Fallback to old file system or external URL
+        return res.redirect(item.file_url);
+      }
+
+      return res.status(404).json({ message: "File data not available" });
     } catch (error) {
       res.status(500).json({ message: "Failed to serve file" });
     }
   });
-  
+
   app.get("/api/promo/:id/file", async (req, res) => {
     try {
       const promos = await storage.getPromoImages(false);
@@ -98,41 +103,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!item || (!item.image_data && !item.image_url)) {
         return res.status(404).json({ message: "Image not found" });
       }
-      
-      res.set({
-        'Content-Type': item.file_size ? 'image/jpeg' : 'application/octet-stream'
-      });
-      
+
       if (item.image_data) {
         const buffer = Buffer.from(item.image_data, 'base64');
-        res.send(buffer);
-      } else if (item.image_url) {
-        res.redirect(item.image_url);
-      } else {
-        res.status(404).json({ message: "Image data not available" });
+        res.set({ 'Content-Type': 'image/jpeg' });
+        return res.send(buffer);
       }
+
+      if (item.image_url && item.image_url.startsWith("/api/promo/")) {
+        return res.status(404).json({ message: "Image data not available" });
+      }
+
+      if (item.image_url) {
+        return res.redirect(item.image_url);
+      }
+
+      return res.status(404).json({ message: "Image data not available" });
     } catch (error) {
       res.status(500).json({ message: "Failed to serve image" });
     }
   });
-  
+
   app.get("/api/banner/:id/file", async (req, res) => {
     try {
       const banner = await storage.getBannerSettings();
       if (!banner || (!banner.banner_image_data && !banner.banner_image_url)) {
         return res.status(404).json({ message: "Banner image not found" });
       }
-      
-      res.set({ 'Content-Type': 'image/jpeg' });
-      
+
       if (banner.banner_image_data) {
         const buffer = Buffer.from(banner.banner_image_data, 'base64');
-        res.send(buffer);
-      } else if (banner.banner_image_url) {
-        res.redirect(banner.banner_image_url);
-      } else {
-        res.status(404).json({ message: "Banner image data not available" });
+        res.set({ 'Content-Type': 'image/jpeg' });
+        return res.send(buffer);
       }
+
+      if (banner.banner_image_url && banner.banner_image_url.startsWith("/api/banner/")) {
+        return res.status(404).json({ message: "Banner image data not available" });
+      }
+
+      if (banner.banner_image_url) {
+        return res.redirect(banner.banner_image_url);
+      }
+
+      return res.status(404).json({ message: "Banner image data not available" });
     } catch (error) {
       res.status(500).json({ message: "Failed to serve banner image" });
     }
