@@ -92,19 +92,16 @@ export class PostgresStorage implements IStorage {
   }
 
   // Display Settings
-  // In storage.ts - add this method
-// Add to IStorage interface
-
-// Add to PostgresStorage class
-async createDisplaySettings(settings: InsertDisplaySettings): Promise<DisplaySettings> {
-  const result = await db.insert(displaySettings).values(settings).returning();
-  return result[0];
-} 
   async getDisplaySettings(): Promise<DisplaySettings | undefined> {
     const settings = await db.select().from(displaySettings)
       .orderBy(desc(displaySettings.created_date))
       .limit(1);
     return settings[0];
+  }
+
+  async createDisplaySettings(settings: InsertDisplaySettings): Promise<DisplaySettings> {
+    const result = await db.insert(displaySettings).values(settings).returning();
+    return result[0];
   }
 
   async updateDisplaySettings(id: number, settings: Partial<InsertDisplaySettings>): Promise<DisplaySettings | undefined> {
@@ -113,10 +110,6 @@ async createDisplaySettings(settings: InsertDisplaySettings): Promise<DisplaySet
       .where(eq(displaySettings.id, id))
       .returning();
     return result[0];
-  }
-  async deleteDisplaySettings(id: number): Promise<boolean> {
-    const result = await db.delete(mediaItems).where(eq(mediaItems.id, id)).returning();
-    return result.length > 0;
   }
   // Media Items
   async getMediaItems(activeOnly = false): Promise<MediaItem[]> {
