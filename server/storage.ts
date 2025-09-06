@@ -18,7 +18,7 @@ import {
   type InsertBannerSettings
 } from "@shared/schema";
 import { eq, desc, asc } from "drizzle-orm";
-import { mkdirSync } from "fs";
+import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
 
 // Create uploads directory
