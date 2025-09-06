@@ -230,9 +230,26 @@ app.put("/api/settings/display/:id?", async (req, res) => {
     for (let index = 0; index < files.length; index++) {
       const file = files[index];
       const mediaType = file.mimetype.startsWith("image/") ? "image" : "video";
-      
-      // Convert file buffer to base64
-      const fileData = file.buffer.toString('base64');
+
+      // Ensure we have a buffer (multer memoryStorage should provide file.buffer)
+      let buffer: Buffer | undefined = file.buffer as unknown as Buffer | undefined;
+
+      if (!buffer || buffer.length === 0) {
+        // Fallback: read from stream if buffer is missing (safety for edge runtimes)
+        const chunks: Buffer[] = [];
+        // @ts-ignore - stream is a Node Readable in multer
+        for await (const chunk of (file as any).stream) {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        }
+        buffer = Buffer.concat(chunks);
+      }
+
+      if (!buffer || buffer.length === 0) {
+        console.warn(`Uploaded file has empty buffer: ${file.originalname} (${file.mimetype}) size=${file.size}`);
+        continue;
+      }
+
+      const fileData = buffer.toString("base64");
       
       const mediaItem = await storage.createMediaItem({
         name: file.originalname,
@@ -347,8 +364,21 @@ app.put("/api/settings/display/:id?", async (req, res) => {
 
       const createdItems = [];
       for (const file of files) {
-        // Convert file buffer to base64
-        const imageData = file.buffer.toString('base64');
+        let buffer: Buffer | undefined = file.buffer as unknown as Buffer | undefined;
+        if (!buffer || buffer.length === 0) {
+          const chunks: Buffer[] = [];
+          // @ts-ignore
+          for await (const chunk of (file as any).stream) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+          }
+          buffer = Buffer.concat(chunks);
+        }
+        if (!buffer || buffer.length === 0) {
+          console.warn(`Uploaded promo has empty buffer: ${file.originalname} (${file.mimetype}) size=${file.size}`);
+          continue;
+        }
+
+        const imageData = buffer.toString('base64');
         
         const promoImage = await storage.createPromoImage({
           name: file.originalname,
