@@ -232,20 +232,31 @@ app.put("/api/settings/display/:id?", async (req, res) => {
       const mediaType = file.mimetype.startsWith("image/") ? "image" : "video";
 
       // Ensure we have a buffer (multer memoryStorage should provide file.buffer)
-      let buffer: Buffer | undefined = file.buffer as unknown as Buffer | undefined;
+      let buffer: Buffer | undefined = (file as any).buffer as Buffer | undefined;
+      const reportedSize = (file as any).size;
 
       if (!buffer || buffer.length === 0) {
         // Fallback: read from stream if buffer is missing (safety for edge runtimes)
-        const chunks: Buffer[] = [];
-        // @ts-ignore - stream is a Node Readable in multer
-        for await (const chunk of (file as any).stream) {
-          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        try {
+          const chunks: Buffer[] = [];
+          const stream = (file as any).stream;
+          if (stream && typeof stream[Symbol.asyncIterator] === "function") {
+            for await (const chunk of stream) {
+              chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+            }
+          }
+          if (chunks.length) {
+            buffer = Buffer.concat(chunks);
+          }
+        } catch (e) {
+          console.warn(`[upload-media] stream read failed for ${file.originalname}:`, e);
         }
-        buffer = Buffer.concat(chunks);
       }
 
+      console.log(`[upload-media] ${file.originalname} type=${file.mimetype} reportedSize=${reportedSize} bufferLen=${buffer?.length ?? 0}`);
+
       if (!buffer || buffer.length === 0) {
-        console.warn(`Uploaded file has empty buffer: ${file.originalname} (${file.mimetype}) size=${file.size}`);
+        console.warn(`[upload-media] Skipping empty file: ${file.originalname}`);
         continue;
       }
 
@@ -259,7 +270,7 @@ app.put("/api/settings/display/:id?", async (req, res) => {
         duration_seconds: parseInt(req.body.duration_seconds) || 30,
         order_index: highestOrder + index + 1,
         is_active: req.body.autoActivate === "true",
-        file_size: file.size,
+        file_size: reportedSize,
         mime_type: file.mimetype,
       });
       
@@ -267,6 +278,7 @@ app.put("/api/settings/display/:id?", async (req, res) => {
       await storage.updateMediaItem(mediaItem.id, {
         file_url: `/api/media/${mediaItem.id}/file`
       });
+      console.log(`[upload-media] Stored id=${mediaItem.id} name=${mediaItem.name} size=${reportedSize} bufferLen=${buffer.length}`);
       
       createdItems.push(mediaItem);
     }

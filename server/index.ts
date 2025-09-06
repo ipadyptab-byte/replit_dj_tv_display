@@ -25,7 +25,7 @@ async function main() {
 
   const PORT = Number(process.env.PORT || 3000);
   server.listen(PORT, () => {
-    console.log(`Server listening on http://localhost:${PORT}`);
+    console.log(`[startup] Server listening on http://localhost:${PORT} (env=${process.env.NODE_ENV || "development"})`);
   });
 }
 
