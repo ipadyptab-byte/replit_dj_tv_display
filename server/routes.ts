@@ -220,7 +220,7 @@ app.put("/api/settings/display/:id?", async (req, res) => {
     const highestOrder = allMedia.reduce((max, item) => 
       Math.max(max, item.order_index || 0), 0);
     
-    for (let index = 0; index < files.length; index++) {
+    for (let index = 0; index &lt; files.length; index++) {
       const file = files[index];
       const mediaType = file.mimetype.startsWith("image/") ? "image" : "video";
       
@@ -239,12 +239,12 @@ app.put("/api/settings/display/:id?", async (req, res) => {
         mime_type: file.mimetype,
       });
       
-      // Update with correct file URL based on created item ID
-      await storage.updateMediaItem(mediaItem.id, {
+      // Update with correct file URL based on created item ID and fetch updated record
+      const updated = await storage.updateMediaItem(mediaItem.id, {
         file_url: `/api/media/${mediaItem.id}/file`
       });
-      
-      createdItems.push(mediaItem);
+
+      createdItems.push(updated || mediaItem);
     }
 
     res.status(201).json(createdItems);
@@ -347,12 +347,12 @@ app.put("/api/settings/display/:id?", async (req, res) => {
           file_size: file.size
         });
         
-        // Update with correct URL
-        await storage.updatePromoImage(promoImage.id, {
+        // Update with correct URL and fetch updated record
+        const updated = await storage.updatePromoImage(promoImage.id, {
           image_url: `/api/promo/${promoImage.id}/file`
         });
         
-        createdItems.push(promoImage);
+        createdItems.push(updated || promoImage);
       }
 
       res.status(201).json(createdItems);
