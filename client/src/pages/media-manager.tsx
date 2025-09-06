@@ -165,7 +165,10 @@ export default function MediaManager() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FileUpload
                 onDrop={handleFileUpload}
-                accept="image/*,video/*"
+                accept={{
+                          "image/*": [],
+                           "video/*": []
+                 }}
                 multiple={true}
                 data-testid="media-upload-dropzone"
               >
