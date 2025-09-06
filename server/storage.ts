@@ -124,6 +124,10 @@ export class PostgresStorage implements IStorage {
     return await db.select().from(mediaItems)
       .orderBy(asc(mediaItems.order_index));
   }
+  async createMediaItem(item: InsertMediaItem): Promise<MediaItem> {
+    const result = await db.insert(mediaItems).values(item).returning();
+    return result[0];
+  }
 
   async getMediaItemById(id: number): Promise<MediaItem | undefined> {
     const result = await db.select().from(mediaItems)
