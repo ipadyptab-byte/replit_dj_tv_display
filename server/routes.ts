@@ -222,14 +222,16 @@ app.put("/api/settings/display/:id?", async (req, res) => {
     
     for (let index = 0; index &lt; files.length; index++) {
       const file = files[index];
+      console.log("[media-upload] name=%s, mimetype=%s, size=%s, buffer.len=%s", file.originalname, file.mimetype, file.size, file?.buffer?.length ?? "n/a");
       const mediaType = file.mimetype.startsWith("image/") ? "image" : "video";
       
       // Convert file buffer to base64
-      const fileData = file.buffer.toString('base64');
+      const fileData = file.buffer?.toString('base64') ?? "";
+      console.log("[media-upload] base64.length=%s", fileData.length);
       
       const mediaItem = await storage.createMediaItem({
         name: file.originalname,
-        file_url: "", // Placeholder URL, will be updated with real ID
+        file_url: "", // Placeholder URL, will be updated conditionally
         file_data: fileData,
         media_type: mediaType,
         duration_seconds: parseInt(req.body.duration_seconds) || 30,
@@ -238,11 +240,21 @@ app.put("/api/settings/display/:id?", async (req, res) => {
         file_size: file.size,
         mime_type: file.mimetype,
       });
-      
-      // Update with correct file URL based on created item ID and fetch updated record
-      const updated = await storage.updateMediaItem(mediaItem.id, {
-        file_url: `/api/media/${mediaItem.id}/file`
-      });
+
+      // Read back to verify persistence of file_data
+      const justCreated = await storage.getMediaItemById(mediaItem.id);
+      const hasData = !!justCreated?.file_data && justCreated.file_data.length > 0;
+      console.log("[media-upload] id=%s persisted.file_data=%s", mediaItem.id, hasData ? "YES" : "NO");
+
+      // Only set file_url if file_data actually exists to avoid redirect loops
+      let updated = justCreated;
+      if (hasData) {
+        updated = await storage.updateMediaItem(mediaItem.id, {
+          file_url: `/api/media/${mediaItem.id}/file`
+        });
+      } else {
+        console.warn("[media-upload] Skipping file_url assignment for id=%s because file_data is NULL/empty", mediaItem.id);
+      }
 
       createdItems.push(updated || mediaItem);
     }
