@@ -220,7 +220,7 @@ app.put("/api/settings/display/:id?", async (req, res) => {
     const highestOrder = allMedia.reduce((max, item) => 
       Math.max(max, item.order_index || 0), 0);
     
-    for (let index = 0; index < files.length; index++) {
+    for (let index = 0; index &lt; < files.length; index++) {
       const file = files[index];
       const mediaType = file.mimetype.startsWith("image/") ? "image" : "video";
       
@@ -239,12 +239,12 @@ app.put("/api/settings/display/:id?", async (req, res) => {
         mime_type: file.mimetype,
       });
       
-      // Update with correct file URL based on created item ID
-      await storage.updateMediaItem(mediaItem.id, {
+    // Update with correct file URL based on created item ID and fetch updated record
+      const updated = await storage.updateMediaItem(mediaItem.id, {
         file_url: `/api/media/${mediaItem.id}/file`
       });
       
-      createdItems.push(mediaItem);
+      createdItems.push(updated || mediaItem);
     }
 
     res.status(201).json(createdItems);
@@ -297,8 +297,8 @@ app.put("/api/settings/display/:id?", async (req, res) => {
       res.status(500).json({ message: "Failed to fetch promotional images" });
     }
   });
-
-  // Serve promo image binary data from database
+  
+    // Serve promo image binary data from database
   app.get("/api/promo/:id/file", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -322,7 +322,8 @@ app.put("/api/settings/display/:id?", async (req, res) => {
     } catch (error) {
       res.status(500).json({ message: "Failed to serve promo image" });
     }
-  });  
+  });
+  
   app.post("/api/promo/upload", uploadPromo.array('files', 10), async (req, res) => {
     try {
       const files = req.files as Express.Multer.File[];
@@ -346,12 +347,12 @@ app.put("/api/settings/display/:id?", async (req, res) => {
           file_size: file.size
         });
         
-        // Update with correct URL
-        await storage.updatePromoImage(promoImage.id, {
+        // Update with correct URL and fetch updated record
+        const updated = await storage.updatePromoImage(promoImage.id, {
           image_url: `/api/promo/${promoImage.id}/file`
         });
         
-        createdItems.push(promoImage);
+        createdItems.push(updated || promoImage);
       }
 
       res.status(201).json(createdItems);
