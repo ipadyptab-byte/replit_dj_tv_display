@@ -61,8 +61,8 @@ const uploadBanner = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
- const uploadPath = path.join(process.cwd(), "uploads");
-  if (!existsSync(uploadPath)) {
+// const uploadPath = path.join(process.cwd(), "uploads");
+  //if (!existsSync(uploadPath)) {
     mkdirSync(uploadPath);
   }
   // Serve binary data from database
