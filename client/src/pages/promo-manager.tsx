@@ -352,13 +352,13 @@ export default function PromoManager() {
           <CardContent className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Preview Window */}
-              <div className="relative bg-gray-100 rounded-lg overflow-hidden aspect-video">
+              <div className="relative bg-gray-100 rounded-lg overflow-hidden aspect-video flex items-center justify-center">
                 {activePromos.length > 0 ? (
                   <>
                     <img 
                       src={activePromos[currentPreviewIndex]?.image_url || ""} 
                       alt="Slideshow preview" 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       data-testid="slideshow-preview-image"
                     />
                     
