@@ -59,13 +59,13 @@ export interface IStorage {
   createPromoImage(image: InsertPromoImage): Promise<PromoImage>;
   updatePromoImage(id: number, image: Partial<InsertPromoImage>): Promise<PromoImage | undefined>;
   deletePromoImage(id: number): Promise<boolean>;
+  getPromoImageById(id: number): Promise<PromoImage | undefined>;
   
   // Banner Settings
   getBannerSettings(): Promise<BannerSettings | undefined>;
   createBannerSettings(banner: InsertBannerSettings): Promise<BannerSettings>;
   updateBannerSettings(id: number, banner: Partial<InsertBannerSettings>): Promise<BannerSettings | undefined>;
-
-  }
+}
 
 export class PostgresStorage implements IStorage {
   // Gold Rates
@@ -113,6 +113,7 @@ export class PostgresStorage implements IStorage {
       .returning();
     return result[0];
   }
+
   // Media Items
   async getMediaItems(activeOnly = false): Promise<MediaItem[]> {
     if (activeOnly) {
@@ -127,7 +128,7 @@ export class PostgresStorage implements IStorage {
 
   async createMediaItem(item: InsertMediaItem): Promise<MediaItem> {
     try {
-      console.log("Attempting to insert media item into mediaitems:", {
+      console.log("Attempting to insert media item:", {
         name: item.name,
         file_url: item.file_url,
         file_data_length: item.file_data ? item.file_data.length : 0,
@@ -136,14 +137,10 @@ export class PostgresStorage implements IStorage {
         mime_type: item.mime_type,
       });
 
-      if (!item.file_data || item.file_data.length === 0) {
-        console.warn("file_data is empty or undefined, insertion may fail:", item);
-      }
-
       const result = await db.insert(mediaItems).values({
         name: item.name,
         file_url: item.file_url,
-        file_data: item.file_data,
+        file_data: item.file_data, // Ensure this is provided and valid
         media_type: item.media_type,
         duration_seconds: item.duration_seconds,
         order_index: item.order_index,
@@ -155,7 +152,7 @@ export class PostgresStorage implements IStorage {
       if (!result[0] || !result[0].file_data) {
         console.warn("Insertion succeeded but file_data is missing:", result[0]);
       } else {
-        console.log("Inserted media item successfully into mediaitems:", result[0]);
+        console.log("Inserted media item successfully:", result[0]);
       }
 
       return result[0];
