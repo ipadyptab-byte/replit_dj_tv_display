@@ -404,9 +404,18 @@ app.put("/api/settings/display/:id?", async (req, res) => {
           message: "Banner updated successfully",
         });
       } else {
-        // Create new banner settings - need to implement this in storage
+        // Create new banner settings and return its URL
+        const newBanner = await storage.createBannerSettings({
+          banner_image_data: imageData,
+          banner_image_url: "",
+          banner_height: 120,
+          is_active: true
+        });
+        await storage.updateBannerSettings(newBanner.id, {
+          banner_image_url: `/api/banner/${newBanner.id}/file`
+        });
         res.status(201).json({ 
-          banner_image_url: `/api/banner/1/file`,
+          banner_image_url: `/api/banner/${newBanner.id}/file`,
           message: "Banner uploaded successfully",
         });
       }

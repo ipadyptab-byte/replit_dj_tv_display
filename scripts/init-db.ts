@@ -48,11 +48,13 @@ async function initDatabase() {
     )
   `;
 
+  // Updated to support storing binary (base64) data in DB
   await client`
     CREATE TABLE IF NOT EXISTS media_items (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
-      file_url TEXT NOT NULL,
+      file_url TEXT,
+      file_data TEXT,
       media_type TEXT NOT NULL,
       duration_seconds INTEGER DEFAULT 30,
       order_index INTEGER DEFAULT 0,
@@ -63,11 +65,16 @@ async function initDatabase() {
     )
   `;
 
+  // Ensure legacy tables are migrated to the new structure
+  await client`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS file_data TEXT`;
+  await client`ALTER TABLE media_items ALTER COLUMN file_url DROP NOT NULL`;
+
   await client`
     CREATE TABLE IF NOT EXISTS promo_images (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
-      image_url TEXT NOT NULL,
+      image_url TEXT,
+      image_data TEXT,
       duration_seconds INTEGER DEFAULT 5,
       transition_effect TEXT DEFAULT 'fade',
       order_index INTEGER DEFAULT 0,
@@ -77,15 +84,21 @@ async function initDatabase() {
     )
   `;
 
+  await client`ALTER TABLE promo_images ADD COLUMN IF NOT EXISTS image_data TEXT`;
+  await client`ALTER TABLE promo_images ALTER COLUMN image_url DROP NOT NULL`;
+
   await client`
     CREATE TABLE IF NOT EXISTS banner_settings (
       id SERIAL PRIMARY KEY,
       banner_image_url TEXT,
+      banner_image_data TEXT,
       banner_height INTEGER DEFAULT 120,
       is_active BOOLEAN DEFAULT true,
       created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
+
+  await client`ALTER TABLE banner_settings ADD COLUMN IF NOT EXISTS banner_image_data TEXT`;
 
   // Insert default data if tables are empty
   const defaultRates = await db.select().from(goldRates).limit(1);
@@ -108,7 +121,7 @@ async function initDatabase() {
     await db.insert(displaySettings).values({});
   }
 
-  console.log("Database initialized successfully");
+  console.log("Database initialized/migrated successfully");
   await client.end();
 }
 
