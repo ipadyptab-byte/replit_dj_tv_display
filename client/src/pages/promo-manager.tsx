@@ -239,7 +239,7 @@ export default function PromoManager() {
                 <img 
                   src={item.image_url || ""} 
                   alt={item.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   data-testid={`promo-image-${item.id}`}
                 />
                 
