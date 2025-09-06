@@ -124,45 +124,50 @@ export class PostgresStorage implements IStorage {
     return await db.select().from(mediaItems)
       .orderBy(asc(mediaItems.order_index));
   }
+
   async createMediaItem(item: InsertMediaItem): Promise<MediaItem> {
-  try {
-    console.log("Attempting to insert media item:", {
-      name: item.name,
-      file_url: item.file_url,
-      file_data_length: item.file_data ? item.file_data.length : 0,
-      media_type: item.media_type,
-      file_size: item.file_size,
-      mime_type: item.mime_type,
-    });
+    try {
+      console.log("Attempting to insert media item into mediaitems:", {
+        name: item.name,
+        file_url: item.file_url,
+        file_data_length: item.file_data ? item.file_data.length : 0,
+        media_type: item.media_type,
+        file_size: item.file_size,
+        mime_type: item.mime_type,
+      });
 
-    const result = await db.insert(mediaItems).values({
-      name: item.name,
-      file_url: item.file_url,
-      file_data: item.file_data, // Ensure this is provided and valid
-      media_type: item.media_type,
-      duration_seconds: item.duration_seconds,
-      order_index: item.order_index,
-      is_active: item.is_active,
-      file_size: item.file_size,
-      mime_type: item.mime_type,
-    }).returning();
+      if (!item.file_data || item.file_data.length === 0) {
+        console.warn("file_data is empty or undefined, insertion may fail:", item);
+      }
 
-    if (!result[0] || !result[0].file_data) {
-      console.warn("Insertion succeeded but file_data is missing:", result[0]);
-    } else {
-      console.log("Inserted media item successfully:", result[0]);
+      const result = await db.insert(mediaItems).values({
+        name: item.name,
+        file_url: item.file_url,
+        file_data: item.file_data,
+        media_type: item.media_type,
+        duration_seconds: item.duration_seconds,
+        order_index: item.order_index,
+        is_active: item.is_active,
+        file_size: item.file_size,
+        mime_type: item.mime_type,
+      }).returning();
+
+      if (!result[0] || !result[0].file_data) {
+        console.warn("Insertion succeeded but file_data is missing:", result[0]);
+      } else {
+        console.log("Inserted media item successfully into mediaitems:", result[0]);
+      }
+
+      return result[0];
+    } catch (error) {
+      console.error("Database error in createMediaItem:", {
+        message: error.message,
+        stack: error.stack,
+        item: item,
+      });
+      throw error; // Propagate the error to be caught by the caller
     }
-
-    return result[0];
-  } catch (error) {
-    console.error("Database error in createMediaItem:", {
-      message: error.message,
-      stack: error.stack,
-      item: item,
-    });
-    throw error; // Propagate the error to be caught by the caller
   }
-}
 
   async getMediaItemById(id: number): Promise<MediaItem | undefined> {
     const result = await db.select().from(mediaItems)
