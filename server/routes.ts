@@ -207,94 +207,79 @@ app.put("/api/settings/display/:id?", async (req, res) => {
   });
 
   app.post("/api/media/upload", uploadMedia.array("files", 10), async (req, res) => {
-  try {
-    console.log("Upload request received:", {
-      body: req.body,
-      files: req.files ? req.files.map(f => ({ originalname: f.originalname, size: f.size, mimetype: f.mimetype })) : []
-    });
-
-    const files = req.files as Express.Multer.File[];
-    if (!files || files.length === 0) {
-      console.error("No files uploaded in request");
-      return res.status(400).json({ message: "No files uploaded" });
-    }
-
-    const createdItems = [];
-    
-    // Get the highest order index to place new items at the end
-    const allMedia = await storage.getMediaItems(false);
-    const highestOrder = allMedia.reduce((max, item) => Math.max(max, item.order_index || 0), 0);
-
-    for (let index = 0; index < files.length; index++) {
-      const file = files[index];
-      try {
-        console.log(`Processing file ${index + 1}/${files.length}:`, { name: file.originalname, size: file.size });
-
-        // Validate file buffer
-        if (!file.buffer || file.buffer.length === 0) {
-          console.error(`Invalid buffer for file ${file.originalname}:`, { size: file.size, bufferLength: file.buffer ? file.buffer.length : null });
-          continue; // Skip to next file
-        }
-
-        // Convert to base64
-        const fileData = file.buffer.toString('base64');
-        if (!fileData || fileData.length === 0) {
-          console.error(`Failed to convert file ${file.originalname} to base64:`, { bufferLength: file.buffer.length });
-          continue; // Skip to next file
-        }
-        console.log(`File data prepared for ${file.originalname}:`, { length: fileData.length, sample: fileData.substring(0, 20) + "..." });
-
-        const mediaType = file.mimetype.startsWith("image/") ? "image" : "video";
-        const mediaItem = await storage.createMediaItem({
-          name: file.originalname,
-          file_url: `/api/media/${Date.now()}/file`, // Temporary placeholder
-          file_data: fileData,
-          media_type: mediaType,
-          duration_seconds: parseInt(req.body.duration_seconds) || 30,
-          order_index: highestOrder + index + 1,
-          is_active: req.body.autoActivate === "true",
-          file_size: file.size,
-          mime_type: file.mimetype,
-        });
-
-        await storage.updateMediaItem(mediaItem.id, {
-          file_url: `/api/media/${mediaItem.id}/file`
-        });
-
-        createdItems.push({ id: mediaItem.id, name: mediaItem.name, file_data_present: !!mediaItem.file_data });
-        console.log(`Successfully uploaded ${mediaItem.name} with id ${mediaItem.id}:`, { file_data_length: mediaItem.file_data ? mediaItem.file_data.length : 0 });
-      } catch (error) {
-        console.error(`Error processing file ${file.originalname}:`, { message: error.message, stack: error.stack });
-      }
-    }
-
-    if (createdItems.length > 0) {
-      console.log("Upload completed:", { createdItems });
-      res.status(201).json({ message: "Files uploaded successfully", items: createdItems });
-    } else {
-      console.error("No files were successfully uploaded");
-      res.status(500).json({ message: "Failed to upload any files" });
-    }
-  } catch (error) {
-    console.error("Error in upload process:", { message: error.message, stack: error.stack });
-    res.status(500).json({ message: "Failed to process upload", error: error.message });
-  }
-});
-      
-    // Update with correct file URL based on created item ID and fetch updated record
-      const updated = await storage.updateMediaItem(mediaItem.id, {
-        file_url: `/api/media/${mediaItem.id}/file`
+    try {
+      console.log("Upload request received:", {
+        body: req.body,
+        files: req.files ? (req.files as Express.Multer.File[]).map(f => ({ originalname: f.originalname, size: f.size, mimetype: f.mimetype })) : []
       });
-      
-      createdItems.push(updated || mediaItem);
-    }
 
-    res.status(201).json(createdItems);
-  } catch (error) {
-    console.error("Upload error:", error);
-    res.status(500).json({ message: "Failed to upload media files" });
-  }
-});
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        console.error("No files uploaded in request");
+        return res.status(400).json({ message: "No files uploaded" });
+      }
+
+      const createdItems: Array<{ id: number; name: string; file_data_present: boolean }> = [];
+      
+      // Get the highest order index to place new items at the end
+      const allMedia = await storage.getMediaItems(false);
+      const highestOrder = allMedia.reduce((max, item) => Math.max(max, item.order_index || 0), 0);
+
+      for (let index = 0; index < files.length; index++) {
+        const file = files[index];
+        try {
+          console.log(`Processing file ${index + 1}/${files.length}:`, { name: file.originalname, size: file.size });
+
+          // Validate file buffer
+          if (!file.buffer || file.buffer.length === 0) {
+            console.error(`Invalid buffer for file ${file.originalname}:`, { size: file.size, bufferLength: file.buffer ? file.buffer.length : null });
+            continue; // Skip to next file
+          }
+
+          // Convert to base64
+          const fileData = file.buffer.toString('base64');
+          if (!fileData || fileData.length === 0) {
+            console.error(`Failed to convert file ${file.originalname} to base64:`, { bufferLength: file.buffer.length });
+            continue; // Skip to next file
+          }
+          console.log(`File data prepared for ${file.originalname}:`, { length: fileData.length, sample: fileData.substring(0, 20) + "..." });
+
+          const mediaType = file.mimetype.startsWith("image/") ? "image" : "video";
+          const mediaItem = await storage.createMediaItem({
+            name: file.originalname,
+            file_url: `/api/media/${Date.now()}/file`, // Temporary placeholder
+            file_data: fileData,
+            media_type: mediaType,
+            duration_seconds: parseInt(req.body.duration_seconds) || 30,
+            order_index: highestOrder + index + 1,
+            is_active: req.body.autoActivate === "true",
+            file_size: file.size,
+            mime_type: file.mimetype,
+          });
+
+          await storage.updateMediaItem(mediaItem.id, {
+            file_url: `/api/media/${mediaItem.id}/file`
+          });
+
+          createdItems.push({ id: mediaItem.id, name: mediaItem.name, file_data_present: !!mediaItem.file_data });
+          console.log(`Successfully uploaded ${mediaItem.name} with id ${mediaItem.id}:`, { file_data_length: mediaItem.file_data ? mediaItem.file_data.length : 0 });
+        } catch (error) {
+          console.error(`Error processing file ${file.originalname}:`, { message: (error as Error).message, stack: (error as Error).stack });
+        }
+      }
+
+      if (createdItems.length > 0) {
+        console.log("Upload completed:", { createdItems });
+        res.status(201).json({ message: "Files uploaded successfully", items: createdItems });
+      } else {
+        console.error("No files were successfully uploaded");
+        res.status(500).json({ message: "Failed to upload any files" });
+      }
+    } catch (error) {
+      console.error("Error in upload process:", { message: (error as Error).message, stack: (error as Error).stack });
+      res.status(500).json({ message: "Failed to process upload", error: (error as Error).message });
+    }
+  });
 
   app.put("/api/media/:id", async (req, res) => {
     try {
