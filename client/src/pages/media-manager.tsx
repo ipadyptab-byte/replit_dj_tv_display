@@ -230,11 +230,12 @@ export default function MediaManager() {
                     <div className="relative">
                       {(() => {
                         const mediaSrc = item.file_url || `/api/media/${item.id}/file`;
-                        return item.media_type === 'image' ? (
-                          <img 
+                         return (
+                          <div className="w-full aspect-video bg-black/5 flex items-center justify-center">
+                            {item.media_type === 'image' ? (                          <img 
                             src={mediaSrc}
                             alt={item.name}
-                            className="w-full h-48 object-cover"
+                            className="w-full h-full object-contain"
                             onError={(e) => {
                               e.currentTarget.src = '/placeholder-image.jpg';
                             }}
@@ -242,10 +243,12 @@ export default function MediaManager() {
                         ) : (
                           <video 
                             src={mediaSrc}
-                            className="w-full h-48 object-cover"
+                            className="w-full h-full object-contain"
                             controls
                             preload="metadata"
                           />
+                            )}
+                          </div>
                         );
                       })()}
                       <div className="absolute top-2 right-2">
