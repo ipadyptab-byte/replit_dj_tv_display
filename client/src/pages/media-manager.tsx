@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FileUpload } from "@/components/ui/file-upload";
 import { mediaApi } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
-import type { MediaItems } from "@shared/schema";
+import type { MediaItem } from "@shared/schema";
 import { Trash2, Edit, Play, Pause, Eye, EyeOff } from "lucide-react";
 
 export default function MediaManager() {
