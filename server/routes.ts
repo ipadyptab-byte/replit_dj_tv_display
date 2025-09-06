@@ -61,36 +61,29 @@ const uploadBanner = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-// const uploadPath = path.join(process.cwd(), "uploads");
-  //if (!existsSync(uploadPath)) {
-    mkdirSync(uploadPath);
-  }
   // Serve binary data from database
-    
   app.get("/api/media/:id/file", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const item = await storage.getMediaItemById(id); // Add this method to storage
-    if (!item || (!item.file_data && !item.file_url)) {
-      return res.status(404).json({ message: "File not found" });
+    try {
+      const id = parseInt(req.params.id);
+      const item = await storage.getMediaItemById(id);
+      if (!item || (!item.file_data && !item.file_url)) {
+        return res.status(404).json({ message: "File not found" });
+      }
+      
+      if (item.file_data) {
+        const buffer = Buffer.from(item.file_data, 'base64');
+        res.set({
+          'Content-Type': item.mime_type || 'application/octet-stream',
+          'Content-Length': buffer.length.toString()
+        });
+        res.send(buffer);
+      } else if (item.file_url) {
+        res.redirect(item.file_url);
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to serve file" });
     }
-    
-    if (item.file_data) {
-      // Serve base64 data directly
-      const buffer = Buffer.from(item.file_data, 'base64');
-      res.set({
-        'Content-Type': item.mime_type || 'application/octet-stream',
-        'Content-Length': buffer.length.toString()
-      });
-      res.send(buffer);
-    } else if (item.file_url) {
-      // Handle external URLs
-      res.redirect(item.file_url);
-    }
-  } catch (error) {
-    res.status(500).json({ message: "Failed to serve file" });
-  }
-});
+  });
   
   app.get("/api/banner/:id/file", async (req, res) => {
     try {
@@ -210,52 +203,55 @@ app.put("/api/settings/display/:id?", async (req, res) => {
   });
 
   app.post("/api/media/upload", uploadMedia.array("files", 10), async (req, res) => {
-  try {
-    const files = req.files as Express.Multer.File[];
-    if (!files || files.length === 0) {
-      return res.status(400).json({ message: "No files uploaded" });
-    }
+    try {
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: "No files uploaded" });
+      }
 
-    const createdItems = [];
-    
-    // Get the highest order index to place new items at the end
-    const allMedia = await storage.getMediaItems(false);
-    const highestOrder = allMedia.reduce((max, item) => 
-      Math.max(max, item.order_index || 0), 0);
-    
-    for (let index = 0; index < files.length; index++) {
-      const file = files[index];
-      const mediaType = file.mimetype.startsWith("image/") ? "image" : "video";
+      const createdItems = [];
       
-      // Convert file buffer to base64
-      const fileData = file.buffer.toString('base64');
+      // Get the highest order index to place new items at the end
+      const allMedia = await storage.getMediaItems(false);
+      const highestOrder = allMedia.reduce((max, item) => 
+        Math.max(max, item.order_index || 0), 0);
       
-      const mediaItem = await storage.createMediaItem({
-        name: file.originalname,
-        file_url: `"", // Placeholder URL, will be updated with real ID
-        file_data: fileData,
-        media_type: mediaType,
-        duration_seconds: parseInt(req.body.duration_seconds) || 30,
-        order_index: highestOrder + index + 1,
-        is_active: req.body.autoActivate === "true",
-        file_size: file.size,
-        mime_type: file.mimetype,
-      });
-      
-      // Update with correct file URL based on created item ID
-      await storage.updateMediaItem(mediaItem.id, {
-        file_url: `/api/media/${mediaItem.id}/file`
-      });
-      
-      createdItems.push(mediaItem);
-    }
+      for (let index = 0; index < files.length; index++) {
+        const file = files[index];
+        const mediaType = file.mimetype.startsWith("image/") ? "image" : "video";
+        
+        // Convert file buffer to base64
+        const fileData = file.buffer?.toString('base64');
+        if (!fileData) {
+          return res.status(400).json({ message: "Uploaded file has no data buffer" });
+        }
+        
+        const mediaItem = await storage.createMediaItem({
+          name: file.originalname,
+          file_url: "", // Placeholder URL, will be updated with real ID
+          file_data: fileData,
+          media_type: mediaType,
+          duration_seconds: parseInt(req.body.duration_seconds) || 30,
+          order_index: highestOrder + index + 1,
+          is_active: req.body.autoActivate === "true",
+          file_size: file.size,
+          mime_type: file.mimetype,
+        });
+        
+        // Update with correct file URL based on created item ID
+        await storage.updateMediaItem(mediaItem.id, {
+          file_url: `/api/media/${mediaItem.id}/file`
+        });
+        
+        createdItems.push(mediaItem);
+      }
 
-    res.status(201).json(createdItems);
-  } catch (error) {
-    console.error("Upload error:", error);
-    res.status(500).json({ message: "Failed to upload media files" });
-  }
-});
+      res.status(201).json(createdItems);
+    } catch (error) {
+      console.error("Upload error:", error);
+      res.status(500).json({ message: "Failed to upload media files" });
+    }
+  });
 
   app.put("/api/media/:id", async (req, res) => {
     try {
