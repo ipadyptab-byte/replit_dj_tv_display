@@ -232,7 +232,7 @@ app.put("/api/settings/display/:id?", async (req, res) => {
       
       const mediaItem = await storage.createMediaItem({
         name: file.originalname,
-        file_url: `/api/media/${Date.now()}/file`, // Placeholder URL, will be updated with real ID
+        file_url: `"", // Placeholder URL, will be updated with real ID
         file_data: fileData,
         media_type: mediaType,
         duration_seconds: parseInt(req.body.duration_seconds) || 30,
