@@ -32,7 +32,7 @@ export const displaySettings = pgTable("display_settings", {
 });
 
 // Media Items (for ads between rates)
-export const mediaItems = pgTable("media_items", {
+export const mediaItems = pgTable("mediaitems", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   file_url: text("file_url"), // Keep for backward compatibility
