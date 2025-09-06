@@ -65,7 +65,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (!existsSync(uploadPath)) {
     mkdirSync(uploadPath);
   }
-  app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
   // Serve binary data from database
     
   app.get("/api/media/:id/file", async (req, res) => {
