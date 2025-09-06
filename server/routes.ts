@@ -298,6 +298,31 @@ app.put("/api/settings/display/:id?", async (req, res) => {
     }
   });
 
+  // Serve promo image binary data from database
+  app.get("/api/promo/:id/file", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      // Reuse storage.getPromoImages to get one; better to have a dedicated method, but this works:
+      const promos = await storage.getPromoImages(false);
+      const item = promos.find(p => p.id === id);
+      if (!item || (!item.image_data && !item.image_url)) {
+        return res.status(404).json({ message: "Promo image not found" });
+      }
+
+      if (item.image_data) {
+        const buffer = Buffer.from(item.image_data, 'base64');
+        res.set({
+          'Content-Type': 'image/jpeg',
+          'Content-Length': buffer.length.toString()
+        });
+        res.send(buffer);
+      } else if (item.image_url) {
+        res.redirect(item.image_url);
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to serve promo image" });
+    }
+  });  
   app.post("/api/promo/upload", uploadPromo.array('files', 10), async (req, res) => {
     try {
       const files = req.files as Express.Multer.File[];
