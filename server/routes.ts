@@ -235,7 +235,7 @@ app.put("/api/settings/display/:id?", async (req, res) => {
         }
 
         // Convert to base64
-        const fileData = file.buffer.toString('base64');
+        const fileData = file.buffer;
         if (!fileData || fileData.length === 0) {
           console.error(`Failed to convert file ${file.originalname} to base64:`, { bufferLength: file.buffer.length });
           continue; // Skip to next file
