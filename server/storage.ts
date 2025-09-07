@@ -143,7 +143,7 @@ export class PostgresStorage implements IStorage {
       const result = await db.insert(mediaItems).values({
         name: item.name,
         file_url: item.file_url,
-        file_data: item.file_data,
+        file_data: item.file_data, // Store as binary
         media_type: item.media_type,
         duration_seconds: item.duration_seconds,
         order_index: item.order_index,
