@@ -198,12 +198,7 @@ export default function TVDisplay() {
                       alt="Devi Jewellers Logo"
                        className={`${screenSize === 'tv' ? 'h-20' : 'h-10 md:h-16'} w-auto object-contain drop-shadow`}                   
                       />
-                  </div>
-                  <div className={screenSize === 'mobile' ? "hidden md:block" : ""}>
-                    <p className="text-gold-200 text-xs md:text-sm">Premium Gold & Silver Collection</p>
-                  </div>
-                </div>
-                
+                                  
                 {/* Date and Time */}
                 <div className="text-right bg-black bg-opacity-30 px-3 py-1 md:px-6 md:py-3 rounded-lg backdrop-blur-sm">
                   <div className="text-sm md:text-lg font-semibold text-gold-200">
