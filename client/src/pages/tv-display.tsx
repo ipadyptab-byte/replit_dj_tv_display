@@ -190,10 +190,10 @@ export default function TVDisplay() {
             className="flex-1 flex flex-col"
           >
             {/* Header with Company Logo - Responsive for all devices */}
-            <div className={`relative bg-gradient-to-r from-jewelry-primary to-jewelry-secondary text-white flex-shrink-0 ${screenSize === 'tv' ? 'py-6' : screenSize === 'tablet' ? 'py-3' : 'py-2 md:py-4'}`}>
-              <div className="container mx-auto px-2 md:px-4 flex items-center justify-between">
-                <div className="flex-1 flex items-center justify-center ">
-                    <img 
+             <div className="relative bg-gradient-to-r from-jewelry-primary to-jewelry-secondary text-redtoday py-1 flex-shrink-0">
+             <div className="container mx-auto px-10 flex items-center justify-between">
+              <div className="w-full flex items-center justify-center py-2">                   
+                <img 
                       src="/logo.png" 
                       alt="Devi Jewellers Logo"
                        className={`${screenSize === 'tv' ? 'h-20' : 'h-10 md:h-16'} w-auto object-contain drop-shadow`}                   
