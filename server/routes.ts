@@ -65,29 +65,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve binary data from database
     
   app.get("/api/media/:id/file", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const item = await storage.getMediaItemById(id); // Add this method to storage
-    if (!item || (!item.file_data && !item.file_url)) {
+    try {
+      const id = parseInt(req.params.id);
+      const item = await storage.getMediaItemById(id);
+      if (!item) {
+        return res.status(404).json({ message: "File not found" });
+      }
+
+      if (item.file_data) {
+        // Serve base64 data directly
+        const buffer = Buffer.from(item.file_data, "base64");
+        res.set({
+          "Content-Type": item.mime_type || "application/octet-stream",
+          "Content-Length": buffer.length.toString(),
+          "Cache-Control": "public, max-age=3600"
+        });
+        return res.send(buffer);
+      }
+
+      if (item.file_url) {
+        // If it's an external URL or pre-existing URL, redirect
+        return res.redirect(item.file_url);
+      }
+
       return res.status(404).json({ message: "File not found" });
+    } catch (error) {
+      console.error("Serve media error:", error);
+      return res.status(500).json({ message: "Failed to serve file" });
     }
-    
-    if (item.file_data) {
-      // Serve base64 data directly
-      const buffer = Buffer.from(item.file_data, 'base64');
-      res.set({
-        'Content-Type': item.mime_type || 'application/octet-stream',
-        'Content-Length': buffer.length.toString()
-      });
-      res.send(buffer);
-    } else if (item.file_url) {
-      // Handle external URLs
-      res.redirect(item.file_url);
-    }
-  } catch (error) {
-    res.status(500).json({ message: "Failed to serve file" });
-  }
-});
+  });
   
   app.get("/api/banner/:id/file", async (req, res) => {
     try {

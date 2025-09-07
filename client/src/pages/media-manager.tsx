@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FileUpload } from "@/components/ui/file-upload";
 import { mediaApi } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
-import type { MediaItems } from "@shared/schema";
+import type { MediaItem } from "@shared/schema";
 import { Trash2, Edit, Play, Pause, Eye, EyeOff } from "lucide-react";
 
 export default function MediaManager() {
@@ -229,24 +229,30 @@ export default function MediaManager() {
                   <div key={item.id} className="border rounded-lg overflow-hidden bg-white shadow-sm">
                     <div className="relative">
                       {(() => {
-                        const mediaSrc = item.file_url || `/api/media/${item.id}/file`;
-                         return (
+                        // Always use internal file endpoint for preview to avoid stale/empty file_url
+                        const mediaSrc = `/api/media/${item.id}/file`;
+                        return (
                           <div className="w-full aspect-video bg-black/5 flex items-center justify-center">
-                            {item.media_type === 'image' ? (                          <img 
-                            src={mediaSrc}
-                            alt={item.name}
-                            className="w-full h-full object-contain"
-                            onError={(e) => {
-                              e.currentTarget.src = '/placeholder-image.jpg';
-                            }}
-                          />
-                        ) : (
-                          <video 
-                            src={mediaSrc}
-                            className="w-full h-full object-contain"
-                            controls
-                            preload="metadata"
-                          />
+                            {item.media_type === 'image' ? (
+                              <img
+                                src={mediaSrc}
+                                alt={item.name}
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                  console.error("Image preview failed:", { id: item.id, src: mediaSrc });
+                                  e.currentTarget.src = "/placeholder-image.jpg";
+                                }}
+                              />
+                            ) : (
+                              <video
+                                src={mediaSrc}
+                                className="w-full h-full object-contain"
+                                controls
+                                preload="metadata"
+                                onError={() => {
+                                  console.error("Video preview failed:", { id: item.id, src: mediaSrc });
+                                }}
+                              />
                             )}
                           </div>
                         );
