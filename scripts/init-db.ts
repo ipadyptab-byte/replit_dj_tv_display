@@ -49,7 +49,7 @@ async function initDatabase() {
   `;
 
   await client`
-    CREATE TABLE IF NOT EXISTS media_items (
+    CREATE TABLE IF NOT EXISTS mediaitems (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
       file_url TEXT NOT NULL,
