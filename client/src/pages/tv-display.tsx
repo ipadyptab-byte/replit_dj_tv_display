@@ -194,7 +194,7 @@ export default function TVDisplay() {
               <div className="container mx-auto px-2 md:px-4 flex items-center justify-between">
                 <div className="flex items-center space-x-2 md:space-x-4">
                     <img 
-                      src="/logo.png" 
+                      src="/icon-512.png" 
                       alt="Devi Jewellers Logo"
                        className={`${screenSize === 'tv' ? 'h-20' : 'h-10 md:h-16'} w-auto object-contain drop-shadow`}                   
                       />
