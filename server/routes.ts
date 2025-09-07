@@ -73,13 +73,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     if (item.file_data) {
-      // Serve base64 data directly
-      const buffer = Buffer.from(item.file_data, 'base64');
       res.set({
-        'Content-Type': item.mime_type || 'application/octet-stream',
-        'Content-Length': buffer.length.toString()
-      });
-      res.send(buffer);
+      'Content-Type': item.mime_type || 'application/octet-stream',
+     'Content-Length': String(item.file_data.length)
+   });
+      res.send(item.file_data);
     } else if (item.file_url) {
       // Handle external URLs
       res.redirect(item.file_url);
