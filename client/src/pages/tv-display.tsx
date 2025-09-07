@@ -193,12 +193,11 @@ export default function TVDisplay() {
             <div className={`relative bg-gradient-to-r from-jewelry-primary to-jewelry-secondary text-white flex-shrink-0 ${screenSize === 'tv' ? 'py-6' : screenSize === 'tablet' ? 'py-3' : 'py-2 md:py-4'}`}>
               <div className="container mx-auto px-2 md:px-4 flex items-center justify-between">
                 <div className="flex items-center space-x-2 md:space-x-4">
-                  <div className="w-10 h-10 md:w-16 md:h-16 bg-gold-500 rounded-full flex items-center justify-center shadow-lg">
                     <img 
                       src="/logo.png" 
                       alt="Devi Jewellers Logo"
-                      className="w-8 h-8 md:w-12 md:h-12 object-contain"
-                    />
+                       className={`${screenSize === 'tv' ? 'h-20' : 'h-10 md:h-16'} w-auto object-contain drop-shadow`}                   
+                      />
                   </div>
                   <div className={screenSize === 'mobile' ? "hidden md:block" : ""}>
                     <p className="text-gold-200 text-xs md:text-sm">Premium Gold & Silver Collection</p>
