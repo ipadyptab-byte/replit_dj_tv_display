@@ -62,24 +62,24 @@ const uploadBanner = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
-  // Serve binary data from database
+  // Serve binary data from database (file_data is stored as BYTEA)
     
   app.get("/api/media/:id/file", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const item = await storage.getMediaItemById(id); // Add this method to storage
+    const item = await storage.getMediaItemById(id);
     if (!item || (!item.file_data && !item.file_url)) {
       return res.status(404).json({ message: "File not found" });
     }
     
     if (item.file_data) {
-      // Serve base64 data directly
-      const buffer = Buffer.from(item.file_data, 'base64');
+      // file_data is already raw bytes (Buffer from BYTEA). Send directly.
+      const buf = item.file_data as unknown as Buffer;
       res.set({
         'Content-Type': item.mime_type || 'application/octet-stream',
-        'Content-Length': buffer.length.toString()
+        'Content-Length': String(buf.length)
       });
-      res.send(buffer);
+      res.send(buf);
     } else if (item.file_url) {
       // Handle external URLs
       res.redirect(item.file_url);
@@ -236,13 +236,8 @@ app.put("/api/settings/display/:id?", async (req, res) => {
           continue; // Skip to next file
         }
 
-        // Convert to base64
-        const fileData = file.buffer.toString('base64');
-        if (!fileData || fileData.length === 0) {
-          console.error(`Failed to convert file ${file.originalname} to base64:`, { bufferLength: file.buffer.length });
-          continue; // Skip to next file
-        }
-        console.log(`File data prepared for ${file.originalname}:`, { length: fileData.length, sample: fileData.substring(0, 20) + "..." });
+        // Store raw bytes (Buffer) directly for BYTEA column
+        const fileData = file.buffer;
 
         const mediaType = file.mimetype.startsWith("image/") ? "image" : "video";
         const mediaItem = await storage.createMediaItem({
@@ -264,7 +259,7 @@ app.put("/api/settings/display/:id?", async (req, res) => {
         createdItems.push({ id: mediaItem.id, name: mediaItem.name, file_data_present: !!mediaItem.file_data });
         console.log(`Successfully uploaded ${mediaItem.name} with id ${mediaItem.id}:`, { file_data_length: mediaItem.file_data ? mediaItem.file_data.length : 0 });
       } catch (error) {
-        console.error(`Error processing file ${file.originalname}:`, { message: error.message, stack: error.stack });
+        console.error(`Error processing file ${file.originalname}:`, { message: (error as any).message, stack: (error as any).stack });
       }
     }
 
@@ -276,8 +271,8 @@ app.put("/api/settings/display/:id?", async (req, res) => {
       res.status(500).json({ message: "Failed to upload any files" });
     }
   } catch (error) {
-    console.error("Error in upload process:", { message: error.message, stack: error.stack });
-    res.status(500).json({ message: "Failed to process upload", error: error.message });
+    console.error("Error in upload process:", { message: (error as any).message, stack: (error as any).stack });
+    res.status(500).json({ message: "Failed to process upload", error: (error as any).message });
   }
 });
       
