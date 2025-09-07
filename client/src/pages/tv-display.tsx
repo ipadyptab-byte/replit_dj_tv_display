@@ -191,17 +191,15 @@ export default function TVDisplay() {
           >
             {/* Header with Company Logo - Responsive for all devices */}
             <div className={`relative bg-gradient-to-r from-jewelry-primary to-jewelry-secondary text-white flex-shrink-0 ${screenSize === 'tv' ? 'py-6' : screenSize === 'tablet' ? 'py-3' : 'py-2 md:py-4'}`}>
+              {/* Top bar with small icon on the left */}
               <div className="container mx-auto px-2 md:px-4 flex items-center justify-between">
                 <div className="flex items-center space-x-2 md:space-x-4">
-                  {/* Page header logo */}
+                  {/* Small icon on the left corner */}
                   <img
-                    src="/logo.jpeg"
-                    alt="Company Logo"
-                    className={`${screenSize === 'tv' ? 'h-20' : 'h-10 md:h-16'} w-auto object-contain drop-shadow`}
+                    src="/logo.png"
+                    alt="Company Icon"
+                    className={`${screenSize === 'tv' ? 'h-12' : 'h-8 md:h-10'} w-auto object-contain drop-shadow`}
                   />
-                  <div className={screenSize === 'mobile' ? "hidden md:block" : ""}>
-                    <p className="text-gold-200 text-xs md:text-sm">Premium Gold & Silver Collection</p>
-                  </div>
                 </div>
                 
                 {/* Date and Time */}
@@ -213,6 +211,15 @@ export default function TVDisplay() {
                     {format(currentTime, "HH:mm:ss")}
                   </div>
                 </div>
+              </div>
+
+              {/* Centered large logo like mobile-control */}
+              <div className="w-full flex justify-center mt-2 md:mt-3">
+                <img 
+                  src="/logo.png" 
+                  alt="Devi Jewellers Logo"
+                  className={`${screenSize === 'tv' ? 'h-40 w-[350px]' : 'h-10 md:h-16 w-[220px] md:w-[300px]'} object-contain`}
+                />
               </div>
             </div>
 
