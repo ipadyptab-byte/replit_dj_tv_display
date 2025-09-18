@@ -11,6 +11,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import MediaManager from "@/pages/media-manager";
 import PromoManager from "@/pages/promo-manager";
 import NotFound from "@/pages/not-found";
+import SaleStatus from "@/pages/sale-status";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Navigation />
       <Switch>
         <Route path="/" component={TVDisplay} />
+        <Route path="/sale-status" component={SaleStatus} />
         <Route path="/mobile" component={MobileControl} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/media" component={MediaManager} />
