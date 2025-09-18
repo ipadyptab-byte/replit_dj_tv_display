@@ -525,6 +525,23 @@ app.put("/api/settings/display/:id?", async (req, res) => {
     }
   });
 
+  // Sale-only JSON (for external sites to consume minimal payload)
+  app.get("/api/rates/sale", async (_req, res) => {
+    try {
+      const r = await storage.getCurrentRates();
+      if (!r) return res.json(null);
+      res.json({
+        gold_24k_sale: r.gold_24k_sale,
+        gold_22k_sale: r.gold_22k_sale,
+        gold_18k_sale: r.gold_18k_sale,
+        silver_per_kg_sale: r.silver_per_kg_sale,
+        created_date: r.created_date,
+      });
+    } catch {
+      res.status(500).json({ message: "Failed to fetch sale rates" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
