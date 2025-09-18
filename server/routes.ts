@@ -525,6 +525,74 @@ app.put("/api/settings/display/:id?", async (req, res) => {
     }
   });
 
+  // Public sales-only rates page (for external consumption)
+  app.get("/sale-status", async (req, res) => {
+    try {
+      // Allow cross-origin access (so vercel site can fetch this page)
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Cache-Control", "no-store");
+
+      const rates = await storage.getCurrentRates();
+
+      // Optional: support JSON output if requested
+      if ((req.query.format as string) === "json") {
+        return res
+          .status(200)
+          .json(
+            rates
+              ? {
+                  gold_24k_sale: rates.gold_24k_sale,
+                  gold_22k_sale: rates.gold_22k_sale,
+                  gold_18k_sale: rates.gold_18k_sale,
+                  silver_per_kg_sale: rates.silver_per_kg_sale,
+                  updated_at: rates.created_date,
+                }
+              : null
+          );
+      }
+
+      // Minimal HTML page with only sale rates
+      const html = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sale Status</title>
+    <style>
+      body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, 'Apple Color Emoji','Segoe UI Emoji'; background: #fff; color: #111; }
+      .wrap { max-width: 640px; margin: 24px auto; padding: 16px; }
+      h1 { margin: 0 0 12px; font-size: 20px; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; align-items: center; }
+      .label { color: #555; }
+      .value { font-weight: 600; text-align: right; }
+      .muted { margin-top: 12px; color: #666; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Current Sale Rates</h1>
+      ${
+        rates
+          ? `<div class="grid">
+              <div class="label">Gold 24K (Sale)</div><div class="value">${rates.gold_24k_sale}</div>
+              <div class="label">Gold 22K (Sale)</div><div class="value">${rates.gold_22k_sale}</div>
+              <div class="label">Gold 18K (Sale)</div><div class="value">${rates.gold_18k_sale}</div>
+              <div class="label">Silver / Kg (Sale)</div><div class="value">${rates.silver_per_kg_sale}</div>
+            </div>
+            <div class="muted">Updated at: ${rates.created_date ?? ""}</div>`
+          : `<div class="muted">No active rates found.</div>`
+      }
+    </div>
+  </body>
+</html>`;
+
+      res.status(200).set({ "Content-Type": "text/html; charset=utf-8" }).send(html);
+    } catch (error) {
+      res.status(500).send("Failed to fetch sale status");
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
