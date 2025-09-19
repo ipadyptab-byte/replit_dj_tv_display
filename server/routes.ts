@@ -119,6 +119,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public simplified rates for website embedding (CORS-enabled at app level)
+  // Maps internal fields to site's expected keys:
+  // vedhani -> 24K sale, ornaments22K -> 22K sale, ornaments18K -> 18K sale, silver -> Silver per KG sale
+  app.get("/api/public/current-rates", async (req, res) => {
+    try {
+      const rates = await storage.getCurrentRates();
+      if (!rates) {
+        return res.json({
+          vedhani: "",
+          ornaments22K: "",
+          ornaments18K: "",
+          silver: "",
+        });
+      }
+
+      res.json({
+        vedhani: rates.gold_24k_sale ?? "",
+        ornaments22K: rates.gold_22k_sale ?? "",
+        ornaments18K: rates.gold_18k_sale ?? "",
+        silver: rates.silver_per_kg_sale ?? "",
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch simplified current rates" });
+    }
+  });
+
   app.post("/api/rates", async (req, res) => {
     try {
       const validatedData = insertGoldRateSchema.parse(req.body);
