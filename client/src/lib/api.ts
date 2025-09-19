@@ -8,20 +8,32 @@ import type {
   BannerSettings 
 } from "@shared/schema";
 
+// Base URL for API calls.
+// Set VITE_API_BASE_URL in your environment (e.g. https://YOUR_PUBLIC_IP:PORT)
+// Falls back to same-origin when not set (useful for local dev with proxy).
+const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL?.replace(/\/$/, "") || "";
+
+// Compose a full URL from a possibly relative path.
+const withBase = (url: string) => {
+  if (!API_BASE) return url; // same-origin
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `${API_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
+};
+
 // Helper function for API requests
 const apiRequest = async (method: string, url: string, data?: any): Promise<Response> => {
   const options: RequestInit = {
     method,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
   };
 
-  if (data && method !== 'GET' && method !== 'HEAD') {
+  if (data && method !== "GET" && method !== "HEAD") {
     options.body = JSON.stringify(data);
   }
 
-  const response = await fetch(url, options);
+  const response = await fetch(withBase(url), options);
   
   if (!response.ok) {
     const errorText = await response.text();
@@ -86,6 +98,7 @@ export const settingsApi = {
     return (await response.json()) as DisplaySettings;
   }
 };
+
 // Media API
 export const mediaApi = {
   getAll: async (activeOnly = false): Promise<MediaItem[]> => {
@@ -95,11 +108,11 @@ export const mediaApi = {
 
   upload: async (files: FileList, options: { duration_seconds: number; autoActivate: boolean }): Promise<MediaItem[]> => {
     const formData = new FormData();
-    Array.from(files).forEach(file => formData.append('files', file));
-    formData.append('duration_seconds', options.duration_seconds.toString());
-    formData.append('autoActivate', options.autoActivate.toString());
+    Array.from(files).forEach(file => formData.append("files", file));
+    formData.append("duration_seconds", options.duration_seconds.toString());
+    formData.append("autoActivate", options.autoActivate.toString());
 
-    const response = await fetch("/api/media/upload", {
+    const response = await fetch(withBase("/api/media/upload"), {
       method: "POST",
       body: formData
     });
@@ -130,12 +143,12 @@ export const promoApi = {
 
   upload: async (files: FileList, options: { duration_seconds: number; transition: string; autoActivate: boolean }): Promise<PromoImage[]> => {
     const formData = new FormData();
-    Array.from(files).forEach(file => formData.append('files', file));
-    formData.append('duration_seconds', options.duration_seconds.toString());
-    formData.append('transition', options.transition);
-    formData.append('autoActivate', options.autoActivate.toString());
+    Array.from(files).forEach(file => formData.append("files", file));
+    formData.append("duration_seconds", options.duration_seconds.toString());
+    formData.append("transition", options.transition);
+    formData.append("autoActivate", options.autoActivate.toString());
 
-    const response = await fetch("/api/promo/upload", {
+    const response = await fetch(withBase("/api/promo/upload"), {
       method: "POST",
       body: formData
     });
@@ -166,9 +179,9 @@ export const bannerApi = {
 
   upload: async (file: File): Promise<{ banner_image_url: string; message: string }> => {
     const formData = new FormData();
-    formData.append('banner', file);
+    formData.append("banner", file);
 
-    const response = await fetch("/api/banner/upload", {
+    const response = await fetch(withBase("/api/banner/upload"), {
       method: "POST",
       body: formData
     });
