@@ -119,6 +119,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // External sales rates proxy (to avoid CORS in client)
+  app.get("/api/rates/sales-external", async (req, res) => {
+    try {
+      const externalUrl = "https://www.businessmantra.info/gold_rates/devi_gold_rate/api.php";
+      const response = await fetch(externalUrl, { method: "GET" });
+
+      if (!response.ok) {
+        const text = await response.text();
+        return res.status(502).json({ message: "Failed to fetch external rates", detail: text });
+      }
+
+      // Attempt to parse as JSON; if it's not JSON, try to coerce
+      let data: any;
+      const text = await response.text();
+      try {
+        data = JSON.parse(text);
+      } catch {
+        // Some endpoints may return PHP-style arrays or plain numbers; try to salvage common patterns
+        data = text;
+      }
+
+      // Map possible external payload keys to our sale fields
+      // Expected keys may include: gold_24k_sale, gold_22k_sale, gold_18k_sale, silver_per_kg_sale
+      // Also accept variants like: gold24k, gold22k, gold18k, silver_kg, silver
+      const normalizeNumber = (v: any) => {
+        if (v === null || v === undefined) return null;
+        if (typeof v === "number") return v;
+        // Remove currency symbols and commas
+        const cleaned = String(v).replace(/[₹,\s]/g, "");
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? null : num;
+      };
+
+      const result = {
+        gold_24k_sale:
+          normalizeNumber(data?.gold_24k_sale) ??
+          normalizeNumber(data?.gold24k) ??
+          normalizeNumber(data?.gold_24k) ??
+          null,
+        gold_22k_sale:
+          normalizeNumber(data?.gold_22k_sale) ??
+          normalizeNumber(data?.gold22k) ??
+          normalizeNumber(data?.gold_22k) ??
+          null,
+        gold_18k_sale:
+          normalizeNumber(data?.gold_18k_sale) ??
+          normalizeNumber(data?.gold18k) ??
+          normalizeNumber(data?.gold_18k) ??
+          null,
+        silver_per_kg_sale:
+          normalizeNumber(data?.silver_per_kg_sale) ??
+          normalizeNumber(data?.silver_kg) ??
+          normalizeNumber(data?.silver) ??
+          null,
+      };
+
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch external sales rates" });
+    }
+  });
+
   app.post("/api/rates", async (req, res) => {
     try {
       const validatedData = insertGoldRateSchema.parse(req.body);

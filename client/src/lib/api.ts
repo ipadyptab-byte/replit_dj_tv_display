@@ -49,6 +49,12 @@ export const ratesApi = {
     return response.json();
   },
 
+  // Fetch external sales rates (proxied through server to avoid CORS)
+  getExternalSales: async (): Promise<Partial<GoldRate> | null> => {
+    const response = await apiRequest("GET", "/api/rates/sales-external");
+    return response.json();
+  },
+
   create: async (rates: InsertGoldRate): Promise<GoldRate> => {
     const response = await apiRequest("POST", "/api/rates", rates);
     return response.json();
