@@ -47,6 +47,13 @@ export default function TVDisplay() {
     refetchInterval: 30000
   });
 
+  // External sales rates for www.devi-jewellers.com
+  const { data: externalSales } = useQuery({
+    queryKey: ["/api/rates/sales-external"],
+    queryFn: ratesApi.getExternalSales,
+    refetchInterval: 30000
+  });
+
   const { data: settings } = useQuery({
     queryKey: ["/api/settings/display"],
     queryFn: settingsApi.getDisplay,
@@ -234,7 +241,7 @@ export default function TVDisplay() {
                     <div className="grid grid-cols-2 gap-2 md:gap-4">
                       <div className="text-center p-2 md:p-4 bg-blue-50 rounded-lg border border-blue-200">
                         <p className="text-xs md:text-sm text-blue-600 font-semibold mb-1">SALE RATE</p>
-                        <p className={`${rateFontSize} font-bold text-blue-800`}>₹{currentRates.gold_24k_sale}</p>
+                        <p className={`${rateFontSize} font-bold text-blue-800`}>₹{externalSales?.gold_24k_sale ?? currentRates.gold_24k_sale}</p>
                       </div>
                       <div className="text-center p-2 md:p-4 bg-blue-50 rounded-lg border border-blue-200">
                         <p className="text-xs md:text-sm text-blue-600 font-semibold mb-1">PURCHASE RATE</p>
@@ -254,7 +261,7 @@ export default function TVDisplay() {
                     <div className="grid grid-cols-2 gap-2 md:gap-4">
                       <div className="text-center p-2 md:p-4 bg-blue-50 rounded-lg border border-blue-200">
                         <p className="text-xs md:text-sm text-blue-600 font-semibold mb-1">SALE RATE</p>
-                        <p className={`${rateFontSize} font-bold text-blue-800`}>₹{currentRates.gold_22k_sale}</p>
+                        <p className={`${rateFontSize} font-bold text-blue-800`}>₹{externalSales?.gold_22k_sale ?? currentRates.gold_22k_sale}</p>
                       </div>
                       <div className="text-center p-2 md:p-4 bg-blue-50 rounded-lg border border-blue-200">
                         <p className="text-xs md:text-sm text-blue-600 font-semibold mb-1">PURCHASE RATE</p>
@@ -274,7 +281,7 @@ export default function TVDisplay() {
                     <div className="grid grid-cols-2 gap-2 md:gap-4">
                       <div className="text-center p-2 md:p-4 bg-blue-50 rounded-lg border border-blue-200">
                         <p className="text-xs md:text-sm text-blue-600 font-semibold mb-1">SALE RATE</p>
-                        <p className={`${rateFontSize} font-bold text-blue-800`}>₹{currentRates.gold_18k_sale}</p>
+                        <p className={`${rateFontSize} font-bold text-blue-800`}>₹{externalSales?.gold_18k_sale ?? currentRates.gold_18k_sale}</p>
                       </div>
                       <div className="text-center p-2 md:p-4 bg-blue-50 rounded-lg border border-blue-200">
                         <p className="text-xs md:text-sm text-blue-600 font-semibold mb-1">PURCHASE RATE</p>
@@ -300,7 +307,7 @@ export default function TVDisplay() {
                       <div className="grid grid-cols-2 gap-2 md:gap-4">
                         <div className="text-center p-2 md:p-4 bg-blue-50 rounded-lg border border-blue-200">
                           <p className="text-xs md:text-sm text-blue-600 font-semibold mb-1">SALE RATE</p>
-                          <p className={`${rateFontSize} font-bold text-blue-800`}>₹{currentRates.silver_per_kg_sale}</p>
+                          <p className={`${rateFontSize} font-bold text-blue-800`}>₹{externalSales?.silver_per_kg_sale ?? currentRates.silver_per_kg_sale}</p>
                         </div>
                         <div className="text-center p-2 md:p-4 bg-blue-50 rounded-lg border border-blue-200">
                           <p className="text-xs md:text-sm text-blue-600 font-semibold mb-1">PURCHASE RATE</p>
